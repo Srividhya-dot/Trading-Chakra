@@ -1,0 +1,61 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #0f172a;
+  color: white;
+}
+
+#app {
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  height: 100vh;
+}
+
+.sidebar {
+  background: #1e293b;
+  padding: 1rem;
+  border-right: 1px solid #334155;
+}
+
+.sidebar h2 {
+  margin-top: 0;
+  color: #38bdf8;
+}
+
+#search {
+  width: 100%;
+  padding: 6px;
+  margin-bottom: 10px;
+  border: none;
+  border-radius: 4px;
+}
+
+#watchlist {
+  list-style: none;
+  padding: 0;
+}
+
+#watchlist li {
+  padding: 8px;
+  margin: 5px 0;
+  background: #334155;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+#watchlist li:hover {
+  background: #475569;
+}
+
+.chart-area {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #0f172a;
+}
+
+#chart-container {
+  width: 95%;
+  height: 95%;
+}
