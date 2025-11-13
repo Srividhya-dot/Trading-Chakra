@@ -1,69 +1,53 @@
 /*
-  Trading Chakra v2
-  Lightweight Charts + Cloudflare Worker (Yahoo Finance)
-  Make sure your Worker URL is correct in API_BASE
+  Trading Chakra v2 - Lightweight Charts + Cloudflare Worker
+  Fully working NSE candles + volume
 */
 
-const API_BASE = "https://black-tree-2e32.sriviadithi.workers.dev/?symbol="; // <- your worker
+const API_BASE = "https://black-tree-2e32.sriviadithi.workers.dev/?symbol=";
 
-// DOM nodes
+// DOM references
 const chartContainer = document.getElementById("chart");
-const volContainer = document.getElementById("volume");
+const volumeContainer = document.getElementById("volume");
 const spinner = document.getElementById("spinner");
 const errorBox = document.getElementById("error");
 const symbolTitle = document.getElementById("symbol-title");
 
-// Lightweight chart instances
+// chart objects
 let chart = null;
 let candleSeries = null;
 let volumeSeries = null;
 
-// helper to show/hide
-function showSpinner(on = true){
-  spinner.classList.toggle("hidden", !on);
+// helpers
+function showSpinner(state = true) {
+  spinner.classList.toggle("hidden", !state);
 }
-function showError(msg){
+function showError(msg) {
   errorBox.textContent = msg;
   errorBox.style.display = msg ? "block" : "none";
 }
 
-// convert yahoo result->lightweight format
-function parseYahoo(result){
-  if(!result || !result.timestamp) return [];
-  const ts = result.timestamp; // seconds array
-  const quote = result.indicators.quote[0];
-  const candles = ts.map((t,i) => {
-    return {
-      time: t,                    // UNIX seconds supported by LWCharts
-      open: quote.open[i],
-      high: quote.high[i],
-      low: quote.low[i],
-      close: quote.close[i],
-      volume: quote.volume[i]
-    };
-  }).filter(c => c.open !== null && c.close !== null); // drop null rows
-  return candles;
-}
-
-// create chart / series (reuse if exists)
-function createChartIfNeeded(){
-  // if already built, just update sizes later
+// Create chart if not exists
+function createChartIfNeeded() {
   if (chart) return;
 
-  // create main chart
+  if (typeof LightweightCharts === "undefined") {
+    showError("Chart library failed to load.");
+    throw new Error("LightweightCharts missing");
+  }
+
   chart = LightweightCharts.createChart(chartContainer, {
     layout: {
       background: { color: "#0f1724" },
       textColor: "#e6eef8"
     },
     rightPriceScale: {
-      borderColor: "rgba(255,255,255,0.04)"
+      borderColor: "rgba(255,255,255,0.2)"
     },
     timeScale: {
-      borderColor: "rgba(255,255,255,0.04)"
+      borderColor: "rgba(255,255,255,0.2)"
     },
-    handleScroll: true,
-    handleScale: true,
+    width: chartContainer.clientWidth,
+    height: chartContainer.clientHeight,
   });
 
   candleSeries = chart.addCandlestickSeries({
@@ -75,7 +59,6 @@ function createChartIfNeeded(){
     wickDownColor: "#ef5350",
   });
 
-  // volume histogram on separate price scale
   volumeSeries = chart.addHistogramSeries({
     color: "#4a90e2",
     priceFormat: { type: "volume" },
@@ -86,96 +69,96 @@ function createChartIfNeeded(){
     }
   });
 
-  // responsive
+  // Resize chart on window resize
   window.addEventListener("resize", () => {
-    chart.applyOptions({ width: chartContainer.clientWidth, height: chartContainer.clientHeight });
+    chart.applyOptions({
+      width: chartContainer.clientWidth,
+      height: chartContainer.clientHeight
+    });
   });
 }
 
-// load and render a symbol
-async function loadSymbol(symbol){
+// Convert Yahoo Finance data → candles
+function convertYahoo(result) {
+  const timestamps = result.timestamp;
+  const quote = result.indicators.quote[0];
+
+  return timestamps.map((t, i) => ({
+    time: t,
+    open: quote.open[i],
+    high: quote.high[i],
+    low: quote.low[i],
+    close: quote.close[i],
+    volume: quote.volume[i]
+  })).filter(c => c.open !== null && c.close !== null);
+}
+
+// Load symbol → fetch → draw
+async function loadSymbol(symbol) {
   showError("");
   showSpinner(true);
   symbolTitle.textContent = symbol;
 
   try {
-    const resp = await fetch(API_BASE + encodeURIComponent(symbol));
-    if (!resp.ok) throw new Error("Failed to fetch data from backend");
+    const response = await fetch(API_BASE + symbol);
+    const data = await response.json();
 
-    const data = await resp.json();
-
-    // Yahoo response nested: data.chart.result[0]
-    if(!data || !data.chart || !data.chart.result || !data.chart.result.length){
-      throw new Error("No chart data returned");
+    if (!data.chart || !data.chart.result) {
+      throw new Error("No chart data returned.");
     }
 
     const result = data.chart.result[0];
-    const candles = parseYahoo(result);
+    const candles = convertYahoo(result);
 
-    if(!candles.length){
-      throw new Error("No usable candle data returned");
-    }
-
-    // ensure chart exists
     createChartIfNeeded();
 
-    // map for LW charts: time in seconds is OK
-    const lwCandles = candles.map(c => ({
+    const candleData = candles.map(c => ({
       time: c.time,
       open: +c.open,
       high: +c.high,
       low: +c.low,
-      close: +c.close
+      close: +c.close,
     }));
 
-    const lwVolume = candles.map(c => ({
+    const volumeData = candles.map(c => ({
       time: c.time,
       value: c.volume,
       color: c.close >= c.open ? "#26a69a" : "#ef5350"
     }));
 
-    candleSeries.setData(lwCandles);
-    volumeSeries.setData(lwVolume);
+    candleSeries.setData(candleData);
+    volumeSeries.setData(volumeData);
 
-    // apply nice zoom to show all data
     chart.timeScale().fitContent();
 
   } catch (err) {
     console.error(err);
-    showError("Failed to load data: " + (err.message || err));
+    showError(err.message);
   } finally {
     showSpinner(false);
   }
 }
 
-// initialize defaults and attach events
-function init(){
-  // initial create to prepare sizes
-  createChartIfNeeded();
+// Initialize app
+function init() {
+  loadSymbol("RELIANCE.NS");
 
-  // default symbol
-  const defaultSymbol = "RELIANCE.NS";
-  loadSymbol(defaultSymbol);
-
-  // watchlist clicks
+  // watchlist clicking
   document.querySelectorAll("#watchlist li").forEach(li => {
     li.addEventListener("click", () => {
-      // highlight
       document.querySelectorAll("#watchlist li").forEach(x => x.classList.remove("active"));
       li.classList.add("active");
-      const sym = li.dataset.symbol;
-      loadSymbol(sym);
+      loadSymbol(li.dataset.symbol);
     });
   });
 
-  // search
-  document.getElementById("search").addEventListener("input", (e) => {
-    const q = e.target.value.trim().toUpperCase();
+  // search filter
+  document.getElementById("search").addEventListener("input", e => {
+    const q = e.target.value.toUpperCase();
     document.querySelectorAll("#watchlist li").forEach(li => {
       li.style.display = li.textContent.toUpperCase().includes(q) ? "" : "none";
     });
   });
 }
 
-// start
 init();
