@@ -3,89 +3,201 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Hybrid Chart (AlphaVantage + Yahoo) — Watchlist + Indicators</title>
+<title>Pro Charting Dashboard</title>
 
-<!-- Lightweight Charts (explicit version that supports addCandlestickSeries) -->
-<script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
+<!-- Lightweight Charts -->
+<script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
 
 <style>
 :root{
-  --bg:#071122; --panel:#0b2230; --muted:#94a3b8; --accent:#38bdf8;
-  --up:#22c55e; --down:#ef4444; --surface:#0f1724;
+  --bg:#071122;
+  --panel:#0b2230;
+  --muted:#94a3b8;
+  --accent:#38bdf8;
+  --up:#22c55e;
+  --down:#ef4444;
+  --surface:#0f1724;
 }
-*{box-sizing:border-box;font-family:Inter, Arial, sans-serif}
-html,body{height:100%;margin:0;background:var(--bg);color:#e6eef8}
-.app{display:flex;height:100vh;overflow:hidden}
-.side{width:320px;background:linear-gradient(180deg,#071a27 0,#071a27 100%);padding:18px;border-right:1px solid rgba(255,255,255,0.03);overflow:auto}
-.side h2{margin:0 0 12px;color:var(--accent);font-size:30px}
-.search{width:100%;background:#071826;color:#cfe6ff;padding:10px;margin-bottom:12px;border-radius:8px;border:none}
+
+/* RESET + BASE */
+*{box-sizing:border-box;font-family:Inter,Arial,sans-serif}
+html,body{margin:0;height:100%;background:var(--bg);color:#e6eef8;overflow:hidden}
+
+.app{display:flex;height:100vh;width:100vw;overflow:hidden}
+
+/* LEFT WATCHLIST */
+.side{
+  width:280px;min-width:280px;
+  background:#081a28;padding:18px;
+  border-right:1px solid rgba(255,255,255,0.04);
+  overflow-y:auto;
+}
+.side h2{margin:0 0 14px;color:var(--accent);font-size:26px}
+
+.search{
+  width:100%;padding:10px 12px;margin-bottom:12px;
+  border-radius:8px;border:none;background:#0d2535;color:#cfe6ff;
+}
+
 .watchlist{list-style:none;padding:0;margin:0}
-.watchlist li{background:#122b36;margin:10px 0;padding:16px;border-radius:8px;cursor:pointer;text-transform:uppercase;letter-spacing:0.6px;color:#e6eef8;font-weight:600}
-.watchlist li.active{background:#244f63}
+.watchlist li{
+  padding:14px;margin:8px 0;border-radius:8px;
+  background:#102a39;color:#e6eef8;
+  cursor:pointer;font-weight:600;letter-spacing:0.5px
+}
+.watchlist li.active{background:#1b4356}
+
 .add-row{display:flex;gap:8px;margin-top:12px}
-.add-row input{flex:1;background:#071026;padding:10px;color:#cfe6ff;border-radius:8px;border:none}
-.add-row button{background:var(--accent);color:#042330;padding:10px 14px;cursor:pointer;border-radius:8px;border:none}
+.add-row input{
+  flex:1;padding:10px;border:none;border-radius:8px;
+  background:#0d2535;color:#cfe6ff;
+}
+.add-row button{
+  background:var(--accent);color:#021c28;
+  padding:10px 14px;border:none;border-radius:8px;cursor:pointer;
+}
 
-.panel{margin-top:20px;background:rgba(255,255,255,0.02);padding:12px;border-radius:8px}
-.panel h3{margin:0 0 8px;font-size:16px}
-.preset-row{display:flex;gap:8px;align-items:center}
-.preset-list{margin-top:8px;font-size:13px;color:var(--muted)}
+/* RIBBON INDICATOR BAR (TOP) */
+.ribbon{
+  width:100%;
+  background:#0b2030;
+  padding:12px;
+  display:flex;gap:20px;align-items:center;
+  border-bottom:1px solid rgba(255,255,255,0.05);
+}
+.ribbon-section{
+  display:flex;align-items:center;gap:6px;
+  background:#102634;padding:8px 12px;border-radius:8px;
+}
+.ribbon label{font-size:13px;color:var(--muted)}
+.ribbon input,.ribbon select{
+  padding:6px 8px;border:none;border-radius:6px;
+  background:#0d2535;color:#cfe6ff;
+}
+.ribbon .chk{width:16px;height:16px}
 
-.main{flex:1;display:flex;flex-direction:column;min-width:0}
-.toolbar{height:64px;background:linear-gradient(90deg,rgba(0,0,0,0.3),rgba(0,0,0,0.05));display:flex;align-items:center;padding:0 18px;border-bottom:1px solid rgba(255,255,255,0.03);gap:16px}
-.title{font-weight:700;font-size:20px}
-.tf-group{display:flex;gap:8px;margin-left:8px}
-.tf-btn{background:rgba(255,255,255,0.03);border-radius:8px;padding:8px 12px;border:none;color:#cfe6ff;cursor:pointer}
-.tf-btn.active{background:var(--accent);color:#01222b}
-.ribbon{margin-left:auto;display:flex;gap:14px;align-items:center}
+/* MAIN AREA */
+.main{
+  flex:1;display:flex;flex-direction:column;
+  min-width:0;overflow:hidden;
+}
 
-/* chart container - wider central area with indicators ribbon on top */
-.chart-wrap{flex:1;display:flex;min-height:0;position:relative}
-.chart-box{flex:1;background:var(--surface);padding:12px;display:flex;flex-direction:column;min-height:0}
-#chart{flex:1;min-height:0;border-radius:6px}
+/* TOOLBAR */
+.toolbar{
+  height:60px;display:flex;align-items:center;
+  gap:16px;padding:0 16px;
+  background:#071826;
+  border-bottom:1px solid rgba(255,255,255,0.04);
+}
+.title{font-size:20px;font-weight:700}
 
-/* top-right toggles shown as ribbon */
-.controls-ribbon{position:absolute;right:18px;top:12px;background:rgba(2,6,23,0.6);padding:8px;border-radius:8px;display:flex;gap:12px;align-items:center;border:1px solid rgba(255,255,255,0.03)}
-.controls-ribbon label{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:13px}
+.tf-group{display:flex;gap:8px}
+.tf-btn{
+  padding:8px 12px;border:none;border-radius:8px;
+  background:#0e283a;color:#cfe6ff;cursor:pointer;
+}
+.tf-btn.active{
+  background:var(--accent);color:#021c28;
+}
 
-/* indicator panel moved to ribbon area (under toolbar) - keep small forms */
-.ribbon-form{display:flex;gap:10px;align-items:center;padding:6px 8px;border-radius:8px;background:rgba(255,255,255,0.02)}
-.ribbon-form input{width:58px;padding:6px;border-radius:6px;border:none;background:#071827;color:#cfe6ff}
+/* CHART */
+.chart-wrap{
+  flex:1;display:flex;position:relative;min-height:0;
+}
+.chart-box{
+  flex:1;padding:0;background:var(--surface);
+  display:flex;flex-direction:column;min-height:0;
+}
+#chart{flex:1;min-height:0}
 
-/* small status */
-.spinner, .error{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.7);padding:12px 18px;border-radius:10px;font-weight:700}
-.error{background:#2b0f0f;color:#ffd2d2;display:none}
+/* SPINNER + ERROR */
+.spinner, .error{
+  position:absolute;left:50%;top:50%;
+  transform:translate(-50%,-50%);
+  padding:12px 18px;border-radius:8px;
+  font-weight:700;z-index:20
+}
+.spinner{background:rgba(0,0,0,0.6)}
+.error{background:#4a1010;color:#ffd2d2;display:none}
+
 .hidden{display:none}
-@media (max-width:1000px){.side{display:none}}
+
+@media(max-width:900px){
+  .side{display:none}
+}
 </style>
 </head>
+
 <body>
 
 <div class="app">
+  <!-- LEFT PANEL -->
   <aside class="side">
     <h2>Watchlist</h2>
+
     <input id="searchInput" class="search" placeholder="Search symbol..." />
+
     <ul id="watchlist" class="watchlist"></ul>
 
     <div class="add-row">
-      <input id="addSymbol" placeholder="Add symbol, e.g. RELIANCE.NS" />
+      <input id="addSymbol" placeholder="Add symbol (e.g., TCS.NS)">
       <button id="addBtn">Add</button>
-    </div>
-
-    <div class="panel">
-      <h3>Presets</h3>
-      <div class="preset-row">
-        <input id="presetName" placeholder="Preset name" />
-        <button id="savePreset" style="background:var(--accent);padding:8px 10px;border-radius:8px;color:#01222b;border:none">Save</button>
-      </div>
-      <div style="margin-top:8px"><button id="exportPresets" style="background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,0.03);padding:8px;border-radius:8px">Export</button></div>
-      <div class="preset-list" id="presetList">Saved presets:</div>
     </div>
   </aside>
 
+  <!-- MAIN AREA -->
   <main class="main">
+
+    <!-- RIBBON PANEL (TOP INDICATOR CONTROLS) -->
+    <div class="ribbon">
+
+      <div class="ribbon-section">
+        <label>Reliable S/R</label>
+        <input type="checkbox" id="toggleReliable" class="chk" checked>
+        <label>L</label>
+        <input id="pivotLeft" type="number" value="15" min="1" style="width:60px">
+        <label>R</label>
+        <input id="pivotRight" type="number" value="15" min="1" style="width:60px">
+      </div>
+
+      <div class="ribbon-section">
+        <label>LuxAlgo</label>
+        <input type="checkbox" id="toggleLux" class="chk" checked>
+        <label>Len</label>
+        <input id="luxLen1" type="number" value="50" min="2" style="width:60px">
+        <label>Mlt</label>
+        <input id="luxMlt1" type="number" value="2" min="0.1" step="0.1" style="width:60px">
+      </div>
+
+      <div class="ribbon-section">
+        <label>Island</label>
+        <input type="checkbox" id="toggleIsland" class="chk" checked>
+        <label>Trend</label>
+        <input id="islandTrend" type="number" value="10" min="2" style="width:60px">
+        <label>Vol</label>
+        <input type="checkbox" id="islandVolFilter" checked class="chk">
+      </div>
+
+      <div class="ribbon-section">
+        <label>Volume</label>
+        <input type="checkbox" id="showVolume" checked class="chk">
+      </div>
+
+      <div class="ribbon-section">
+        <label>Live (sec)</label>
+        <input id="pollInterval" type="number" value="5" min="2" style="width:70px">
+      </div>
+
+      <button id="applyIndicators" style="padding:8px 16px;border:none;border-radius:8px;background:var(--accent);color:#021c28;cursor:pointer">
+        Apply
+      </button>
+
+    </div>
+
+    <!-- TOOLBAR: SYMBOL + TIMEFRAMES -->
     <div class="toolbar">
       <div class="title" id="symbolTitle">Loading...</div>
+
       <div class="tf-group" id="timeframes">
         <button class="tf-btn" data-tf="1m">1m</button>
         <button class="tf-btn" data-tf="5m">5m</button>
@@ -96,43 +208,30 @@ html,body{height:100%;margin:0;background:var(--bg);color:#e6eef8}
         <button class="tf-btn" data-tf="1W">1W</button>
         <button class="tf-btn" data-tf="1M">1M</button>
       </div>
-
-      <div class="ribbon" id="topRibbon">
-        <div class="ribbon-form">
-          <div style="color:var(--muted);font-size:12px">Pivot L</div>
-          <input id="pivotLeft" type="number" min="1" value="15" />
-          <div style="color:var(--muted);font-size:12px">R</div>
-          <input id="pivotRight" type="number" min="1" value="15" />
-          <div style="color:var(--muted);font-size:12px">Lux len</div>
-          <input id="luxLen1" type="number" min="2" value="50" />
-          <div style="color:var(--muted);font-size:12px">mlt</div>
-          <input id="luxMlt1" type="number" step="0.1" value="2" />
-          <div style="color:var(--muted);font-size:12px">Trend</div>
-          <input id="islandTrend" type="number" min="2" value="10" />
-          <label style="margin-left:6px"><input id="islandVolFilter" type="checkbox" checked />Vol</label>
-          <button id="applyIndicators" style="background:var(--accent);color:#01222b;padding:8px;border-radius:8px;border:none;margin-left:6px">Apply</button>
-        </div>
-      </div>
     </div>
 
     <div class="chart-wrap">
       <div class="chart-box">
         <div id="chart"></div>
-        <div id="spinner" class="spinner">Loading...</div>
+        <div id="spinner" class="spinner hidden">Loading...</div>
         <div id="error" class="error"></div>
       </div>
     </div>
+
   </main>
 </div>
 
 <script>
-/* ---------------- CONFIG ---------------- */
-const ALPHA_KEY = "C99VSVXV4LQO45SE"; // your AlphaVantage key (from your message)
-const ALPHA_URL = "https://www.alphavantage.co/query";
-const DEFAULT_SYMBOLS = ["RELIANCE.NS","TCS.NS","INFY.NS","HDFCBANK.NS","ICICIBANK.NS"];
-const YAHOO_CHART_URL = (sym, range, interval) => `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?range=${range}&interval=${interval}`;
+/* ---------------------------------------------
+   CONFIG
+---------------------------------------------- */
+const WORKER_URL_YAHOO = "https://black-tree-2e32.sriviadithi.workers.dev/?symbol=";
+const ALPHA_KEY = "C99VSVXV4LQO45SE";  // Your AlphaVantage API Key
+let DATA_SOURCE = "yahoo"; // default (option B selected)
 
-/* DOM refs */
+const DEFAULT_SYMBOLS = ["RELIANCE.NS","TCS.NS","INFY.NS","HDFCBANK.NS","ICICIBANK.NS"];
+
+/* DOM REFS */
 const watchlistEl = document.getElementById('watchlist');
 const symbolTitle = document.getElementById('symbolTitle');
 const chartDiv = document.getElementById('chart');
@@ -144,537 +243,542 @@ const addBtn = document.getElementById('addBtn');
 const searchInput = document.getElementById('searchInput');
 
 const tfButtons = Array.from(document.querySelectorAll('.tf-btn'));
+
+const toggleReliable = document.getElementById('toggleReliable');
+const toggleLux = document.getElementById('toggleLux');
+const toggleIsland = document.getElementById('toggleIsland');
+const showVolume = document.getElementById('showVolume');
+
 const pivotLeft = document.getElementById('pivotLeft');
 const pivotRight = document.getElementById('pivotRight');
+
 const luxLen1 = document.getElementById('luxLen1');
 const luxMlt1 = document.getElementById('luxMlt1');
+
 const islandTrend = document.getElementById('islandTrend');
 const islandVolFilter = document.getElementById('islandVolFilter');
+
+const pollIntervalInput = document.getElementById('pollInterval');
 const applyIndicatorsBtn = document.getElementById('applyIndicators');
 
-const presetName = document.getElementById('presetName');
-const savePresetBtn = document.getElementById('savePreset');
-const presetList = document.getElementById('presetList');
-const exportPresetsBtn = document.getElementById('exportPresets');
-
-/* state */
+/* STATE */
 let watchSymbols = JSON.parse(localStorage.getItem('watchSymbols')) || DEFAULT_SYMBOLS.slice();
-let presets = JSON.parse(localStorage.getItem('chartPresets')) || {};
+let chart = null;
+let candleSeries = null;
+let volumeSeries = null;
+let srLines = [];
 let lastSymbol = null;
-let activeTF = '1D';
-let chart = null, candleSeries = null, volumeSeries = null;
-let srPriceLines = [];
+let activeTF = "1D";
 let pollTimer = null;
 
-/* create chart */
+/* ---------------------------------------------
+   CHART INIT
+---------------------------------------------- */
 function createChart(){
   if(chart) return;
+
   chart = LightweightCharts.createChart(chartDiv, {
-    width: chartDiv.clientWidth,
-    height: chartDiv.clientHeight,
-    layout: { backgroundColor: "#0f1724", textColor: "#d1d4dc" },
-    grid: { vertLines: { color: "#253248" }, horzLines: { color: "#253248" } },
-    timeScale: { borderColor: "#485c7b", timeVisible: true }
+    layout:{ backgroundColor:"#0f1724", textColor:"#d1d4dc"},
+    rightPriceScale:{ borderColor:"#485c7b" },
+    timeScale:{ borderColor:"#485c7b", timeVisible:true, secondsVisible:false },
+    grid:{ vertLines:{color:"#253248"}, horzLines:{color:"#253248"} }
   });
+
   candleSeries = chart.addCandlestickSeries({
-    upColor: "#22c55e", downColor: "#ef4444", borderVisible: true, wickVisible: true
+    upColor:"#22c55e",
+    downColor:"#ef4444",
+    borderVisible:true,
+    wickVisible:true
   });
+
   volumeSeries = chart.addHistogramSeries({
-    priceFormat: { type: "volume" }, priceScaleId: "", scaleMargins: { top: 0.8, bottom: 0 }
+    priceFormat:{ type:'volume' },
+    priceScaleId:'',
+    scaleMargins:{ top:0.8, bottom:0 }
   });
 }
+/* ---------------------------------------------
+   FETCH — YAHOO FINANCE (default)
+---------------------------------------------- */
+async function fetchYahoo(symbol, range='1y', gran='1d') {
+  const url = WORKER_URL_YAHOO + encodeURIComponent(symbol) + `&range=${range}&interval=${gran}`;
+  try {
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) throw new Error(res.status);
 
-/* UI helpers */
-function showSpinner(){ spinner.classList.remove('hidden'); spinner.style.display='block'; }
-function hideSpinner(){ spinner.classList.add('hidden'); spinner.style.display='none'; }
-function showError(msg){ errorBox.style.display='block'; errorBox.textContent = msg; }
-function hideError(){ errorBox.style.display='none'; }
-
-/* render watchlist */
-function renderWatchlist(){
-  watchlistEl.innerHTML = '';
-  for(const s of watchSymbols){
-    const li = document.createElement('li');
-    li.textContent = s;
-    li.dataset.symbol = s;
-    li.addEventListener('click', ()=> loadChart(s));
-    watchlistEl.appendChild(li);
-  }
-  attachActive();
-}
-function attachActive(){
-  Array.from(watchlistEl.children).forEach(li=>{
-    li.classList.toggle('active', li.dataset.symbol === lastSymbol);
-  });
-}
-
-/* add symbol */
-addBtn.addEventListener('click', ()=>{
-  const v = (addSymbolInput.value || '').trim();
-  if(!v) return;
-  const up = v.toUpperCase();
-  if(!watchSymbols.includes(up)){ watchSymbols.unshift(up); localStorage.setItem('watchSymbols', JSON.stringify(watchSymbols)); renderWatchlist(); }
-  addSymbolInput.value = '';
-  loadChart(up);
-});
-
-/* search filter */
-searchInput.addEventListener('input', e=>{
-  const q = e.target.value.trim().toLowerCase();
-  Array.from(watchlistEl.children).forEach(li=>{
-    li.style.display = q && !li.textContent.toLowerCase().includes(q) ? 'none' : '';
-  });
-});
-
-/* timeframes */
-tfButtons.forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    tfButtons.forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    activeTF = btn.dataset.tf;
-    if(lastSymbol) loadChart(lastSymbol);
-  });
-});
-
-/* presets */
-function renderPresets(){
-  presetList.innerHTML = 'Saved presets:';
-  const keys = Object.keys(presets);
-  if(!keys.length){ presetList.innerHTML += '<div style="color:var(--muted);margin-top:6px">no saved presets</div>'; return; }
-  for(const k of keys){
-    const div = document.createElement('div');
-    div.style.marginTop='6px';
-    div.innerHTML = `<strong style="margin-right:8px">${k}</strong>
-      <button data-name="${k}" class="loadPreset" style="margin-right:6px">Load</button>
-      <button data-name="${k}" class="delPreset" style="background:transparent;color:var(--muted)">Delete</button>`;
-    presetList.appendChild(div);
-  }
-  Array.from(document.getElementsByClassName('loadPreset')).forEach(b=> b.addEventListener('click', ()=> applyPreset(presets[b.dataset.name])));
-  Array.from(document.getElementsByClassName('delPreset')).forEach(b=> b.addEventListener('click', ()=> { delete presets[b.dataset.name]; localStorage.setItem('chartPresets', JSON.stringify(presets)); renderPresets(); }));
-}
-savePresetBtn.addEventListener('click', ()=>{
-  const name = (presetName.value||'').trim();
-  if(!name){ alert('Give preset a name'); return; }
-  presets[name] = {
-    pivotLeft: pivotLeft.valueAsNumber, pivotRight: pivotRight.valueAsNumber,
-    luxLen1: luxLen1.valueAsNumber, luxMlt1: luxMlt1.valueAsNumber,
-    islandTrend: islandTrend.valueAsNumber, islandVol: islandVolFilter.checked
-  };
-  localStorage.setItem('chartPresets', JSON.stringify(presets));
-  presetName.value='';
-  renderPresets();
-});
-exportPresetsBtn.addEventListener('click', ()=>{
-  const blob = new Blob([JSON.stringify(presets, null, 2)], {type:'application/json'});
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download='presets.json'; a.click(); URL.revokeObjectURL(a.href);
-});
-function applyPreset(p){
-  pivotLeft.value = p.pivotLeft; pivotRight.value = p.pivotRight;
-  luxLen1.value = p.luxLen1; luxMlt1.value = p.luxMlt1;
-  islandTrend.value = p.islandTrend; islandVolFilter.checked = !!p.islandVol;
-  loadChart(lastSymbol);
-}
-
-/* ----------------- Data fetchers -----------------
-   Primary: AlphaVantage for intraday.
-   Secondary: Yahoo Finance for intraday/daily when AV fails.
-   We handle formats and normalize to {time,open,high,low,close,volume} with epoch seconds.
-*/
-
-/* helper to pause (for rate limit safety) */
-function wait(ms){ return new Promise(resolve=>setTimeout(resolve, ms)); }
-
-/* AlphaVantage intraday fetch */
-async function fetchAlphaIntraday(symbol, interval='15min', outputsize='compact'){
-  try{
-    const params = new URLSearchParams({
-      function: 'TIME_SERIES_INTRADAY',
-      symbol: symbol.replace('.NS',''), // AlphaVantage may prefer base symbol; we try without suffix
-      interval,
-      outputsize,
-      apikey: ALPHA_KEY
-    });
-    const url = `${ALPHA_URL}?${params.toString()}`;
-    const res = await fetch(url);
-    if(!res.ok) throw new Error('Alpha HTTP '+res.status);
     const json = await res.json();
-    // Check rate limit
-    if(json['Note'] || json['Error Message']) {
-      console.warn('AlphaVantage rate/err', json);
-      return {error: json['Note'] || json['Error Message'] || 'Alpha error'};
-    }
-    const key = Object.keys(json).find(k=>k.includes('Time Series'));
-    const series = json[key];
-    if(!series) return {error:'no_series'};
-    const out = Object.entries(series).map(([ts, obj])=>{
-      // ts format: '2025-11-12 15:30:00' (assume local exchange)
-      const t = Math.floor(new Date(ts + ' UTC').getTime()/1000) || Math.floor(new Date(ts).getTime()/1000);
-      return { time: t, open: +obj['1. open'], high: +obj['2. high'], low: +obj['3. low'], close: +obj['4. close'], volume: +obj['5. volume'] };
-    }).sort((a,b)=>a.time - b.time);
-    return {data: out};
-  }catch(err){
-    console.error('fetchAlphaIntraday err', err);
-    return {error: err.message || 'alpha_error'};
-  }
-}
 
-/* AlphaVantage daily fetch (TIME_SERIES_DAILY) */
-async function fetchAlphaDaily(symbol){
-  try{
-    const params = new URLSearchParams({ function:'TIME_SERIES_DAILY_ADJUSTED', symbol: symbol.replace('.NS',''), outputsize:'compact', apikey: ALPHA_KEY });
-    const res = await fetch(`${ALPHA_URL}?${params.toString()}`);
-    if(!res.ok) throw new Error('Alpha HTTP '+res.status);
-    const json = await res.json();
-    if(json['Note'] || json['Error Message']) { console.warn('AlphaVantage note', json); return {error: json['Note'] || json['Error Message']}; }
-    const series = json['Time Series (Daily)'] || json['Time Series (Daily)'];
-    if(!series) return {error:'no_series'};
-    const out = Object.entries(series).map(([d,obj])=>{
-      const t = Math.floor(new Date(d+'T00:00:00').getTime()/1000);
-      return { time:t, open:+obj['1. open'], high:+obj['2. high'], low:+obj['3. low'], close:+obj['4. close'], volume:+obj['6. volume']||+obj['5. volume']||0 };
-    }).sort((a,b)=>a.time-b.time);
-    return {data: out};
-  }catch(err){
-    console.error('fetchAlphaDaily err', err);
-    return {error: err.message || 'alpha_error'};
-  }
-}
+    // Worker returns simple array
+    if (Array.isArray(json))
+      return json.map(normalizeBar);
 
-/* Yahoo fetch (chart API), can do intraday or daily */
-async function fetchYahoo(symbol, range='1y', interval='1d'){
-  try{
-    const url = YAHOO_CHART_URL(symbol, range, interval);
-    const res = await fetch(url, {cache:'no-store'});
-    if(!res.ok) throw new Error('Yahoo HTTP '+res.status);
-    const json = await res.json();
-    if(!json.chart || !json.chart.result || !json.chart.result[0]) return {error:'no_chart'};
-    const r = json.chart.result[0];
-    const timestamps = r.timestamp || (r.indicators && r.indicators.quote && r.indicators.quote[0] && r.indicators.quote[0].timestamp) || null;
-    const quote = r.indicators && r.indicators.quote && r.indicators.quote[0];
-    if(Array.isArray(timestamps) && quote){
-      const out = [];
-      for(let i=0;i<timestamps.length;i++){
-        const t = timestamps[i];
-        const o = quote.open?.[i], h = quote.high?.[i], l = quote.low?.[i], c = quote.close?.[i], v = quote.volume?.[i] || 0;
-        if(o==null||h==null||l==null||c==null) continue;
-        out.push({ time: t, open:+o, high:+h, low:+l, close:+c, volume:+v });
-      }
-      return {data: out};
-    }
-    // fallback parsing if adjclose etc present
-    return {error:'no_quote'};
-  }catch(err){
-    console.error('fetchYahoo err', err);
-    return {error: err.message || 'yahoo_error'};
-  }
-}
+    // Yahoo JSON structure
+    if (json?.chart?.result?.[0]) {
+      const r = json.chart.result[0];
+      const timestamps = r.timestamp;
+      const q = r.indicators?.quote?.[0];
 
-/* Universal fetch function (option C fallback logic)
-   - For intraday intervals use AlphaVantage first, fallback to Yahoo (if available)
-   - For daily/week/month use Yahoo first, fallback to AlphaDaily
-*/
-async function fetchOHLC(symbol, desiredTF='1D'){
-  // Map TF to intervals and ranges
-  const intradayMap = { '1m':'1min', '5m':'5min', '15m':'15min', '30m':'30min', '60m':'60min' };
-  try{
-    if(intradayMap[desiredTF]) {
-      const avInterval = intradayMap[desiredTF];
-      // Alpha first
-      const av = await fetchAlphaIntraday(symbol, avInterval, 'compact');
-      if(av.data && av.data.length>0) return av.data;
-      // If alpha returns error or empty, try Yahoo intraday interval (Yahoo supports e.g., '15m' as interval)
-      const yahooInterval = desiredTF.replace('m','m');
-      // Yahoo range can be '5d' for intraday
-      const yf = await fetchYahoo(symbol, '5d', yahooInterval);
-      if(yf.data && yf.data.length>0) return yf.data;
-      // If both fail, try alpha daily -> synthesize smaller TF
-      const ad = await fetchAlphaDaily(symbol);
-      if(ad.data && ad.data.length>0) return ad.data;
-      return [];
-    } else {
-      // daily/week/month -> Yahoo primary
-      if(desiredTF === '1D') {
-        const yf = await fetchYahoo(symbol, '1y', '1d');
-        if(yf.data && yf.data.length>0) return yf.data;
-        const ad = await fetchAlphaDaily(symbol);
-        if(ad.data && ad.data.length>0) return ad.data;
-        return [];
+      if (Array.isArray(timestamps) && q) {
+        const out = [];
+        for (let i = 0; i < timestamps.length; i++) {
+          const o = q.open?.[i];
+          const h = q.high?.[i];
+          const l = q.low?.[i];
+          const c = q.close?.[i];
+          const v = q.volume?.[i] ?? 0;
+          if (o == null || h == null || l == null || c == null) continue;
+
+          out.push({
+            time: timestamps[i],
+            open: o,
+            high: h,
+            low: l,
+            close: c,
+            volume: v
+          });
+        }
+        return out.map(normalizeBar);
       }
-      if(desiredTF === '1W') {
-        // ask Yahoo for 5y with 1wk or request 1y with 1wk
-        const yf = await fetchYahoo(symbol, '5y', '1wk');
-        if(yf.data && yf.data.length>0) return yf.data;
-        const ad = await fetchAlphaDaily(symbol);
-        if(ad.data && ad.data.length>0) return ad.data;
-        return [];
-      }
-      if(desiredTF === '1M') {
-        const yf = await fetchYahoo(symbol, '10y', '1mo');
-        if(yf.data && yf.data.length>0) return yf.data;
-        const ad = await fetchAlphaDaily(symbol);
-        if(ad.data && ad.data.length>0) return ad.data;
-        return [];
-      }
-      // default fallback
-      const yf = await fetchYahoo(symbol, '1y', '1d');
-      return yf.data || [];
     }
-  }catch(err){
-    console.error('fetchOHLC err', err);
+
+    return [];
+
+  } catch (err) {
+    console.error("Yahoo fetch error", err);
     return [];
   }
 }
 
-/* normalize / ensure ascending and epoch seconds */
-function ensureAscending(arr){
-  if(!Array.isArray(arr)) return [];
-  const a = arr.filter(Boolean).map(x=>({
-    time: Math.floor(Number(x.time)),
-    open: Number(x.open), high:Number(x.high), low:Number(x.low), close:Number(x.close), volume: Number(x.volume||0)
-  }));
-  a.sort((p,q)=>p.time - q.time);
-  return a;
+/* ---------------------------------------------
+   FETCH — ALPHA VANTAGE (Intraday + Daily)
+---------------------------------------------- */
+async function fetchAlpha(symbol, interval="1min") {
+  const url =
+    `https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=${symbol}` +
+    `&interval=${interval}&apikey=${ALPHA_KEY}&outputsize=full`;
+
+  try {
+    const res = await fetch(url, { cache: "no-store" });
+    const json = await res.json();
+
+    const key = Object.keys(json).find(k => k.includes("Time Series"));
+    if (!key) return [];
+
+    const series = json[key];
+    const out = [];
+
+    for (const t in series) {
+      const row = series[t];
+      const ts = Math.floor(new Date(t).getTime() / 1000);
+      out.push({
+        time: ts,
+        open: +row["1. open"],
+        high: +row["2. high"],
+        low: +row["3. low"],
+        close: +row["4. close"],
+        volume: +row["5. volume"]
+      });
+    }
+
+    return out.sort((a, b) => a.time - b.time);
+
+  } catch (err) {
+    console.error("Alpha fetch error", err);
+    return [];
+  }
 }
 
-/* convert daily to intraday synthetic when necessary (approximate) */
-function convertDailyToTF(sourceBars, targetTF){
-  const tfSeconds = {'1m':60,'5m':300,'15m':900,'30m':1800,'60m':3600,'1D':86400,'1W':86400*7,'1M':86400*30};
-  const targetSec = tfSeconds[targetTF] || 86400;
-  if(targetSec >= 86400) {
-    // aggregate daily -> weekly/monthly handled upstream
-    return sourceBars;
+/* ---------------------------------------------
+   UNIVERSAL FETCH WRAPPER
+---------------------------------------------- */
+async function fetchOHLC(symbol, range='1y', gran='1d'){
+
+  if (DATA_SOURCE === "alpha") {
+    // Convert granularity
+    let intv = "1min";
+    if (gran === "5m") intv = "5min";
+    if (gran === "15m") intv = "15min";
+    if (gran === "30m") intv = "30min";
+    if (gran === "60m") intv = "60min";
+
+    return fetchAlpha(symbol, intv);
   }
-  // split each day into parts
+
+  // Fallback to Yahoo
+  return fetchYahoo(symbol, range, gran);
+}
+
+/* ---------------------------------------------
+   NORMALIZATION
+---------------------------------------------- */
+function normalizeBar(b) {
+  let t = b.time;
+  if (t > 1e12) t = Math.floor(t / 1000); // ms → sec
+  return {
+    time: t,
+    open: +b.open,
+    high: +b.high,
+    low: +b.low,
+    close: +b.close,
+    volume: +(b.volume || 0),
+  };
+}
+
+/* ---------------------------------------------
+   TIMEFRAME CONVERSION
+---------------------------------------------- */
+const tfSeconds = {
+  "1m": 60,
+  "5m": 300,
+  "15m": 900,
+  "30m": 1800,
+  "60m": 3600,
+  "1D": 86400,
+  "1W": 86400 * 7,
+  "1M": 86400 * 30
+};
+
+function convertToTF(bars, srcSec, tf) {
+  const target = tfSeconds[tf] || 86400;
+
+  // If matching — no conversion
+  if (srcSec === target) return bars.slice();
+
+  // If going to higher TF (aggregate)
+  if (target > srcSec) {
+    const groups = new Map();
+    for (const b of bars) {
+      const k = Math.floor(b.time / target);
+      if (!groups.has(k)) groups.set(k, []);
+      groups.get(k).push(b);
+    }
+
+    const out = [];
+    groups.forEach(arr => {
+      const o = arr[0].open;
+      const c = arr[arr.length - 1].close;
+      const h = Math.max(...arr.map(x => x.high));
+      const l = Math.min(...arr.map(x => x.low));
+      const v = arr.reduce((s, x) => s + x.volume, 0);
+
+      out.push({
+        time: arr[0].time,
+        open: o, high: h, low: l, close: c, volume: v
+      });
+    });
+
+    return out;
+  }
+
+  // If lower TF but only daily data → synthesize (approx)
   const out = [];
-  for(const day of sourceBars){
-    const parts = Math.max(1, Math.floor(86400/targetSec));
-    for(let p=0;p<parts;p++){
-      const t = day.time + p*targetSec;
-      const o = day.open + (day.close - day.open) * (p/parts);
-      const c = day.open + (day.close - day.open) * ((p+1)/parts);
-      const h = Math.max(o,c, day.high);
-      const l = Math.min(o,c, day.low);
-      const v = Math.round(day.volume/parts);
-      out.push({time:t,open:o,high:h,low:l,close:c,volume:v});
+  const parts = Math.floor(86400 / target);
+
+  for (const d of bars) {
+    const step = (d.close - d.open) / parts;
+
+    for (let i = 0; i < parts; i++) {
+      const o = d.open + step * i;
+      const c = d.open + step * (i + 1);
+
+      out.push({
+        time: d.time + i * target,
+        open: o,
+        high: Math.max(o, c, d.high),
+        low: Math.min(o, c, d.low),
+        close: c,
+        volume: Math.floor(d.volume / parts)
+      });
     }
   }
+
   return out;
 }
 
-/* ---------------- Indicators (simplified) ---------------- */
-/* Reliable pivot S/R (horizontal): return up to 50 levels */
-function computeReliableSR(bars, left=15, right=15) {
-  const levels = [];
-  for(let i = left; i < bars.length - right; i++){
-    const candidateHigh = bars[i].high;
-    const candidateLow = bars[i].low;
-    let isPH = true, isPL = true;
-    for(let j = i - left; j <= i + right; j++){
-      if(j === i) continue;
-      if(bars[j].high >= candidateHigh) isPH = false;
-      if(bars[j].low <= candidateLow) isPL = false;
-      if(!isPH && !isPL) break;
+/* ---------------------------------------------
+   INDICATOR — RELIABLE SUPPORT / RESISTANCE
+---------------------------------------------- */
+function computeReliableSR(bars, L=15, R=15){
+  const out = [];
+
+  for (let i = L; i < bars.length - R; i++) {
+    // pivot high
+    let isPH = true;
+    for (let j = i - L; j <= i + R; j++) {
+      if (bars[i].high < bars[j].high) { isPH = false; break; }
     }
-    if(isPH) levels.push({price:candidateHigh, label:'PH', color:'#ef4444', width:2});
-    if(isPL) levels.push({price:candidateLow, label:'PL', color:'#22c55e', width:2});
+
+    // pivot low
+    let isPL = true;
+    for (let j = i - L; j <= i + R; j++) {
+      if (bars[i].low > bars[j].low) { isPL = false; break; }
+    }
+
+    if (isPH) out.push({ price: bars[i].high, color:"#ef4444", width:2 });
+    if (isPL) out.push({ price: bars[i].low, color:"#22c55e", width:2 });
   }
-  // merge near prices
+
+  // Clean duplicates
   const merged = [];
-  levels.sort((a,b)=>b.price-a.price);
-  for(const L of levels){
-    const found = merged.find(m=>Math.abs(m.price - L.price) < (L.price*0.0015 + 1e-8));
-    if(found){ found.count=(found.count||1)+1; found.price=(found.price+L.price)/2; }
-    else merged.push({...L, count:1});
+  for (const lv of out) {
+    const f = merged.find(m => Math.abs(m.price - lv.price) < lv.price * 0.002);
+    if (!f) merged.push(lv);
   }
-  merged.sort((a,b)=>b.count - a.count);
-  return merged.slice(0,50);
+
+  return merged;
 }
 
-/* Lux simplified: SMA and upper/lower bands (last value -> horizontal) */
+/* ---------------------------------------------
+   INDICATOR — SIMPLE LUX SR (SMA + bands)
+---------------------------------------------- */
 function computeLuxSR(bars, len=50, mlt=2) {
-  if(bars.length < len) return [];
-  const closes = bars.map(b=>b.close);
+  if (bars.length < len) return [];
+
+  const closes = bars.map(b => b.close);
+  const levels = [];
+
   let sum = 0;
-  for(let i=0;i<len;i++) sum += closes[closes.length - len + i];
-  const mean = sum / len;
-  let variance = 0;
-  for(let i=closes.length - len;i<closes.length;i++) variance += Math.pow(closes[i]-mean,2);
-  variance /= len;
-  const std = Math.sqrt(variance);
-  const upper = mean + mlt*std;
-  const lower = mean - mlt*std;
+  for (let i = 0; i < closes.length; i++) {
+    sum += closes[i];
+    if (i >= len) sum -= closes[i - len];
+
+    if (i >= len - 1) {
+      const sma = sum / len;
+      const win = closes.slice(i - len + 1, i + 1);
+      const mean = sma;
+      const std = Math.sqrt(win.reduce((s, x) => s + (x - mean) ** 2, 0) / len);
+
+      levels.push({
+        sma,
+        upper: sma + mlt * std,
+        lower: sma - mlt * std
+      });
+    }
+  }
+
+  const last = levels[levels.length - 1];
   return [
-    {price: upper, label:'Lux Upper', color:'#f6c85f', width:1},
-    {price: mean, label:'Lux SMA', color:'#60a5fa', width:2},
-    {price: lower, label:'Lux Lower', color:'#7c3aed', width:1}
+    { price: last.upper, color:"#ffd166", width:1 },
+    { price: last.sma, color:"#60a5fa", width:2 },
+    { price: last.lower, color:"#7c3aed", width:1 }
   ];
 }
 
-/* Island reversal detection (simplified): detect gap up then gap down or vice versa */
+/* ---------------------------------------------
+   INDICATOR — ISLAND REVERSALS (simple)
+---------------------------------------------- */
 function computeIslandReversals(bars, trendLen=10, volFilter=true){
-  const res = [];
-  for(let i=1;i<bars.length-1;i++){
-    const prev = bars[i-1], cur = bars[i], next = bars[i+1];
-    // bullish island: gap up (cur.low > prev.high), then gap down (next.high < cur.low)
-    if(cur.low > prev.high && next.high < cur.low){
-      if(volFilter){
-        let volAvg=0, count=0;
-        for(let k=Math.max(0,i-trendLen); k<i; k++){ volAvg += bars[k].volume; count++; }
-        volAvg = count? volAvg/count:0;
-        if(cur.volume < volAvg) continue;
+  const out = [];
+
+  for (let i = 1; i < bars.length - 1; i++) {
+    const prev = bars[i - 1];
+    const cur = bars[i];
+    const next = bars[i + 1];
+
+    // bullish island
+    if (cur.low > prev.high && next.high < cur.low) {
+      if (volFilter) {
+        let avg = 0;
+        for (let j = Math.max(0, i - trendLen); j < i; j++)
+          avg += bars[j].volume;
+        avg = avg / Math.min(i, trendLen);
+        if (cur.volume < avg) continue;
       }
-      res.push({startTime: cur.time, endTime: next.time, top: cur.high, bottom: cur.low, bullish:true});
+      out.push({ top: cur.high, bottom: cur.low, bullish: true });
     }
+
     // bearish island
-    if(cur.high < prev.low && next.low > cur.high){
-      if(volFilter){
-        let volAvg=0, count=0;
-        for(let k=Math.max(0,i-trendLen); k<i; k++){ volAvg += bars[k].volume; count++; }
-        volAvg = count? volAvg/count:0;
-        if(cur.volume < volAvg) continue;
+    if (cur.high < prev.low && next.low > cur.high) {
+      if (volFilter) {
+        let avg = 0;
+        for (let j = Math.max(0, i - trendLen); j < i; j++)
+          avg += bars[j].volume;
+        avg = avg / Math.min(i, trendLen);
+        if (cur.volume < avg) continue;
       }
-      res.push({startTime: cur.time, endTime: next.time, top: cur.high, bottom: cur.low, bullish:false});
+      out.push({ top: cur.high, bottom: cur.low, bullish: false });
     }
   }
-  return res;
-}
 
-/* remove existing price lines */
-function clearIndicators(){
-  if(!chart || !candleSeries) return;
-  for(const pl of srPriceLines){
-    try{ candleSeries.removePriceLine(pl); }catch(e){}
+  return out;
+}
+/* -------------------------------------------------
+   CLEAR OLD INDICATORS
+-------------------------------------------------- */
+let currentLines = [];
+
+function clearIndicators() {
+  for (const line of currentLines) {
+    try { candleSeries.removePriceLine(line); } catch(e){}
   }
-  srPriceLines = [];
+  currentLines = [];
 }
 
-/* draw horizontals */
-function drawSR(levels){
-  for(const L of levels){
-    try{
-      const pl = candleSeries.createPriceLine({
-        price: L.price,
-        color: L.color || '#999',
-        lineWidth: L.width || 1,
-        lineStyle: LightweightCharts.LineStyle.Solid,
-        axisLabelVisible: true,
-        title: L.label || ''
-      });
-      srPriceLines.push(pl);
-    }catch(e){ console.warn('createPriceLine failed', e); }
+/* -------------------------------------------------
+   DRAW HORIZONTAL S/R LEVELS
+-------------------------------------------------- */
+function drawSR(levels) {
+  for (const L of levels) {
+    const pl = candleSeries.createPriceLine({
+      price: L.price,
+      color: L.color,
+      lineWidth: L.width,
+      axisLabelVisible: true
+    });
+    currentLines.push(pl);
   }
 }
 
-/* draw islands as top+bottom price lines */
+/* -------------------------------------------------
+   DRAW ISLAND REVERSALS (TOP & BOTTOM LINES)
+-------------------------------------------------- */
 function drawIslands(islands){
-  for(const it of islands){
-    const c = it.bullish ? 'rgba(8,153,129,0.18)' : 'rgba(242,54,69,0.18)';
-    const top = candleSeries.createPriceLine({price: it.top, color: c, lineWidth:2, title: it.bullish?'IslandTop':'IslandTop'});
-    const bot = candleSeries.createPriceLine({price: it.bottom, color: c, lineWidth:2, title: it.bullish?'IslandBottom':'IslandBottom'});
-    srPriceLines.push(top, bot);
+  for (const I of islands) {
+    const col = I.bullish ? "rgba(8,153,129,0.25)" : "rgba(242,54,69,0.25)";
+    const top = candleSeries.createPriceLine({
+      price: I.top,
+      color: col,
+      lineWidth: 2,
+      axisLabelVisible: true
+    });
+    const bottom = candleSeries.createPriceLine({
+      price: I.bottom,
+      color: col,
+      lineWidth: 2,
+      axisLabelVisible: true
+    });
+    currentLines.push(top, bottom);
   }
 }
 
-/* ---------------- Main loadChart ---------------- */
-async function loadChart(symbol){
-  if(!symbol) return;
+/* -------------------------------------------------
+   LOAD CHART (MAIN)
+-------------------------------------------------- */
+async function loadChart(symbol) {
   lastSymbol = symbol;
-  attachActive();
+  attachActiveToList(symbol);
   createChart();
-  showSpinner(); hideError();
-  symbolTitle.innerText = symbol;
+  hideError();
+  showSpinner();
+  symbolTitle.textContent = symbol;
 
-  // fetch data
-  let raw = await fetchOHLC(symbol, activeTF);
-  // if intraday desired but AV returned daily due to failure, synthesize
-  if((activeTF==='1m'||activeTF==='5m'||activeTF==='15m'||activeTF==='30m'||activeTF==='60m') && raw.length>0){
-    // if raw appears daily (big gaps between timestamps) and not intraday, convert
-    const avgDiff = raw.length > 2 ? (raw[raw.length-1].time - raw[0].time) / raw.length : 86400;
-    if(avgDiff > 4000 && avgDiff > (activeTF.includes('m') ? 60 : 1) * 3600){ 
-      raw = convertDailyToTF(raw, activeTF);
-    }
-  }
-
-  const bars = ensureAscending(raw);
+  /* FETCH RAW */
+  const raw = await fetchOHLC(symbol, "1y", "1d");
   hideSpinner();
-  if(!bars || bars.length===0){ showError('No data returned for ' + symbol); return; }
 
-  // Prepare lightweight data (time as epoch seconds)
-  const lcData = bars.map(b=>({ time: b.time, open: b.open, high: b.high, low: b.low, close: b.close }));
-  try{
-    candleSeries.setData(lcData);
-    chart.timeScale().fitContent();
-  }catch(err){
-    console.error('chart.setData error', err);
-    showError('Chart rendering error — invalid data format');
+  if (!raw || raw.length === 0) {
+    showError("No data for " + symbol);
     return;
   }
 
-  // volume
-  const vData = bars.map(b=>({ time: b.time, value: b.volume || 0, color: b.close >= b.open ? '#22c55e' : '#ef4444' }));
-  try{ volumeSeries.setData(vData); }catch(e){}
+  // sort ascending
+  raw.sort((a, b) => a.time - b.time);
 
-  // indicators
+  /* DETECT SOURCE PERIOD */
+  let srcSec = 86400;
+  if (raw.length >= 2) {
+    const diff = raw[1].time - raw[0].time;
+    if (diff > 1) srcSec = diff;
+  }
+
+  /* TIMEFRAME CONVERSION */
+  const converted = convertToTF(raw, srcSec, activeTF);
+
+  /* CHART SET DATA */
+  candleSeries.setData(
+    converted.map(b => ({
+      time: b.time,
+      open: b.open,
+      high: b.high,
+      low: b.low,
+      close: b.close
+    }))
+  );
+
+  if (showVolume.checked) {
+    volumeSeries.setData(
+      converted.map(b => ({
+        time: b.time,
+        value: b.volume,
+        color: b.close >= b.open ? "#22c55e" : "#ef4444"
+      }))
+    );
+  } else {
+    volumeSeries.setData([]);
+  }
+
+  chart.timeScale().fitContent();
+
+  /* INDICATORS */
   clearIndicators();
-  // Reliable
-  const sr = computeReliableSR(bars, pivotLeft.valueAsNumber || 15, pivotRight.valueAsNumber || 15);
-  drawSR(sr.map(s=>({price:s.price, label:s.label, color:s.color, width:s.width})));
-  // Lux
-  const lux = computeLuxSR(bars, luxLen1.valueAsNumber || 50, luxMlt1.valueAsNumber || 2);
-  drawSR(lux);
-  // Island
-  const islands = computeIslandReversals(bars, islandTrend.valueAsNumber || 10, islandVolFilter.checked);
-  drawIslands(islands);
 
-  // start live polling for latest quote (simple approach: re-fetch full set every interval)
+  if (toggleReliable.checked) {
+    const sr = computeReliableSR(converted, pivotLeft.valueAsNumber, pivotRight.valueAsNumber);
+    drawSR(sr);
+  }
+  if (toggleLux.checked) {
+    const lux = computeLuxSR(converted, luxLen1.valueAsNumber, luxMlt1.valueAsNumber);
+    drawSR(lux);
+  }
+  if (toggleIsland.checked) {
+    const isl = computeIslandReversals(converted, islandTrend.valueAsNumber, islandVolFilter.checked);
+    drawIslands(isl);
+  }
+
   setupLivePolling(symbol);
 }
 
-/* ---------------- Live Polling ---------------- */
-function isTradingNowLocal(){
+/* -------------------------------------------------
+   LIVE POLLING (ONLY DURING MARKET HOURS)
+-------------------------------------------------- */
+let pollTimer = null;
+
+function isTradingNow() {
   const d = new Date();
-  // approximate trading hours 09:15 - 15:30 local
-  const hrs = d.getHours(), mins = d.getMinutes();
-  // If local timezone is IST (user likely in India), hours 9..15 window
-  if(hrs > 9 && hrs < 16) return true;
-  if(hrs === 9 && mins >= 0) return true;
-  if(hrs === 16 && mins <= 0) return false;
-  return false;
-}
-async function setupLivePolling(symbol){
-  // clear existing timer
-  if(pollTimer) clearInterval(pollTimer);
-  const intervalSec = 8; // default poll
-  pollTimer = setInterval(async ()=>{
-    try{
-      // if not trading hours, skip polling but allow manual reload
-      if(!isTradingNowLocal()) return;
-      // fetch latest 2 days/daily or intraday tick
-      const latest = await fetchOHLC(symbol, activeTF);
-      if(!latest || latest.length===0) return;
-      // simply reload chart (safe)
-      await loadChart(symbol);
-    }catch(err){ console.warn('poll error', err); }
-  }, intervalSec*1000);
+  const h = d.getHours();
+  const m = d.getMinutes();
+  // NSE trading 9:15–15:30 (safe margin)
+  if (h < 9 || (h === 9 && m < 15)) return false;
+  if (h > 15 || (h === 15 && m > 30)) return false;
+  return true;
 }
 
-/* initial rendering */
-renderWatchlist();
-renderPresets = (()=>{})(); // placeholder safe
-renderPresets = function(){ /* recreate function above for initial call */ };
-renderPresets();
-renderWatchlist();
+async function fetchLatestDaily(symbol) {
+  const data = await fetchOHLC(symbol, "5d", "1d");
+  if (!data.length) return null;
+  return data[data.length - 1];
+}
 
-/* attach apply button */
-applyIndicatorsBtn.addEventListener('click', ()=> { if(lastSymbol) loadChart(lastSymbol); });
+function setupLivePolling(symbol) {
+  if (pollTimer) clearInterval(pollTimer);
 
-/* auto load first */
-if(watchSymbols.length>0) loadChart(watchSymbols[0]);
+  const interval = Math.max(2, pollIntervalInput.valueAsNumber || 5);
 
-/* cleanup */
-window.addEventListener('beforeunload', ()=>{ if(pollTimer) clearInterval(pollTimer); });
+  pollTimer = setInterval(async () => {
+    if (!isTradingNow()) return;
 
-/* resizing */
-window.addEventListener('resize', ()=> { if(chart) chart.applyOptions({ width: chartDiv.clientWidth, height: chartDiv.clientHeight }); });
+    const last = await fetchLatestDaily(symbol);
+    if (!last) return;
+
+    // Quick update: reload chart (safer)
+    loadChart(symbol);
+
+  }, interval * 1000);
+}
+
+/* -------------------------------------------------
+   APPLY INDICATORS BUTTON
+-------------------------------------------------- */
+applyIndicatorsBtn.addEventListener("click", () => {
+  if (lastSymbol) loadChart(lastSymbol);
+});
+
+/* -------------------------------------------------
+   INIT: LOAD FIRST SYMBOL
+-------------------------------------------------- */
+if (watchSymbols.length > 0) {
+  loadChart(watchSymbols[0]);
+}
 
 </script>
 </body>
