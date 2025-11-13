@@ -1,63 +1,75 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trading Chakra</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trading Chakra</title>
 
-    <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 
-    <!-- Lightweight Charts -->
-    <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.1/dist/lightweight-charts.standalone.production.js"></script>
+  <!-- Lightweight Charts -->
+  <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.1/dist/lightweight-charts.standalone.production.js"></script>
+
 </head>
-
 <body>
+
 <div id="app">
 
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
-        <h1>Watchlist</h1>
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+      <h1>Watchlist</h1>
 
-        <input id="search" type="text" placeholder="Search stock...">
+      <input id="search" type="text" placeholder="Search stock...">
 
-        <ul id="watchlist">
-            <li data-symbol="RELIANCE.NS">RELIANCE</li>
-            <li data-symbol="TCS.NS">TCS</li>
-            <li data-symbol="INFY.NS">INFY</li>
-            <li data-symbol="HDFCBANK.NS">HDFCBANK</li>
-            <li data-symbol="ICICIBANK.NS">ICICIBANK</li>
-        </ul>
+      <ul id="watchlist">
+          <li data-symbol="RELIANCE.NS">RELIANCE</li>
+          <li data-symbol="TCS.NS">TCS</li>
+          <li data-symbol="INFY.NS">INFY</li>
+          <li data-symbol="HDFCBANK.NS">HDFCBANK</li>
+          <li data-symbol="ICICIBANK.NS">ICICIBANK</li>
+      </ul>
 
-        <!-- ADD STOCK -->
-        <div class="add-stock-box">
-            <input id="add-stock" type="text" placeholder="Add symbol...">
-            <button id="add-btn">Add</button>
-        </div>
-    </aside>
+      <!-- ADD STOCK -->
+      <div id="add-box">
+          <input id="add-stock" type="text" placeholder="Add symbol...">
+          <button id="add-btn">Add</button>
+      </div>
+  </aside>
 
-    <!-- MAIN CHART AREA -->
-    <main class="chart-area">
+  <!-- MAIN PANEL -->
+  <main class="chart-area">
 
-        <!-- TOOLBAR -->
-        <div id="toolbar">
-            <span id="symbol-title">Loading...</span>
+      <!-- TOP BAR -->
+      <div id="toolbar">
+          <span id="symbol-title">Loading...</span>
 
-            <!-- TIMEFRAMES -->
-            <div id="timeframes">
-                <button class="tf-btn active" data-tf="1D">1D</button>
-                <button class="tf-btn" data-tf="1W">1W</button>
-                <button class="tf-btn" data-tf="1M">1M</button>
-                <button class="tf-btn" data-tf="6M">6M</button>
-                <button class="tf-btn" data-tf="1Y">1Y</button>
-                <button class="tf-btn" data-tf="5Y">5Y</button>
-                <button class="tf-btn" data-tf="MAX">MAX</button>
-            </div>
-        </div>
+          <div id="timeframes">
+              <button class="tf-btn active" data-tf="1D">1D</button>
+              <button class="tf-btn" data-tf="1W">1W</button>
+              <button class="tf-btn" data-tf="1M">1M</button>
+              <button class="tf-btn" data-tf="6M">6M</button>
+              <button class="tf-btn" data-tf="1Y">1Y</button>
+              <button class="tf-btn" data-tf="5Y">5Y</button>
+              <button class="tf-btn" data-tf="MAX">MAX</button>
+          </div>
+      </div>
 
-        <!-- CHART + VOLUME -->
-        <div id="chart-wrapper">
-            <div id="chart"></div>
-            <div id="volume"></div>
+      <div id="chart-wrapper">
 
-            <div id="spinner">Loading...</div>
-            <div id="error"></div>
+          <div id="chart"></div>
+          <div id="volume"></div>
+
+          <div id="spinner">Loading...</div>
+          <div id="error"></div>
+
+      </div>
+
+  </main>
+
+</div>
+
+<!-- YOUR JAVASCRIPT MUST BE HERE (BOTTOM OF BODY) -->
+<script src="script.js"></script>
+
+</body>
+</html>
