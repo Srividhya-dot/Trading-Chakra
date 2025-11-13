@@ -1,128 +1,94 @@
-// ==============================
+// -----------------------------
 // CONFIG
-// ==============================
+// -----------------------------
 const WORKER_URL = "https://black-tree-2e32.sriviadithi.workers.dev/?symbol=";
 
-// ==============================
-// CHART SETUP
-// ==============================
-let chart;
-let candleSeries;
+// HTML elements
+const chartContainer = document.getElementById("chart-container");
+const watchlistItems = document.querySelectorAll("#watchlist li");
 
-function initChart() {
-    const chartContainer = document.getElementById("chart-container");
+// Global chart + series reference
+let chart = null;
+let candleSeries = null;
+
+// -----------------------------
+// CREATE CHART (only once)
+// -----------------------------
+function createChart() {
+    if (chart) return chart; // Already created
 
     chart = LightweightCharts.createChart(chartContainer, {
         width: chartContainer.clientWidth,
         height: chartContainer.clientHeight,
         layout: {
-            background: { color: "#0d1b2a" },
-            textColor: "#ffffff",
+            backgroundColor: "#0e1624",
+            textColor: "#d1d4dc"
         },
         grid: {
-            vertLines: { color: "#1b263b" },
-            horzLines: { color: "#1b263b" },
+            vertLines: { color: "#253248" },
+            horzLines: { color: "#253248" }
         },
-        timeScale: {
-            borderColor: "#1b263b",
-        },
+        timeScale: { borderColor: "#485c7b" },
+        rightPriceScale: { borderColor: "#485c7b" }
     });
 
-    candleSeries = chart.addCandlestickSeries();
+    candleSeries = chart.addCandlestickSeries({
+        upColor: "#26a69a",
+        downColor: "#ef5350",
+        borderVisible: true,
+        wickVisible: true,
+    });
+
+    return chart;
 }
 
-// ==============================
+// -----------------------------
 // FETCH OHLC DATA FROM WORKER
-// ==============================
+// -----------------------------
 async function fetchData(symbol) {
-    const url = WORKER_URL + symbol;
-
     try {
-        const response = await fetch(url, {
-            method: "GET",
-            headers: { "Content-Type": "application/json" }
-        });
-
-        if (!response.ok) {
-            console.error("Fetch failed:", response.status);
-            return null;
-        }
-
+        const response = await fetch(WORKER_URL + symbol);
         const data = await response.json();
 
         if (!Array.isArray(data)) {
-            console.error("Invalid data format:", data);
-            return null;
+            console.warn("⚠ Worker returned empty or invalid data");
+            return [];
         }
 
         return data;
-
-    } catch (err) {
-        console.error("Fetch error:", err);
-        return null;
+    } catch (e) {
+        console.error("Fetch Error:", e);
+        return [];
     }
 }
 
-// ==============================
-// LOAD CHART
-// ==============================
+// -----------------------------
+// LOAD CHART DATA
+// -----------------------------
 async function loadChart(symbol) {
     console.log("Loading:", symbol);
 
-    const data = await fetchData(symbol);
+    createChart(); // Ensure chart exists
 
-    if (!data || data.length === 0) {
+    const ohlc = await fetchData(symbol);
+
+    if (ohlc.length === 0) {
         console.warn("⚠ No chart data returned");
         return;
     }
 
-    // Convert to Lightweight Charts format
-    const formatted = data.map(c => ({
-        time: Math.floor(c.time), // seconds timestamp
-        open: c.open,
-        high: c.high,
-        low: c.low,
-        close: c.close
-    }));
-
-    candleSeries.setData(formatted);
+    candleSeries.setData(ohlc);
 }
 
-// ==============================
-// WATCHLIST CLICK EVENTS
-// ==============================
-function initWatchlist() {
-    const items = document.querySelectorAll("#watchlist li");
-
-    items.forEach(item => {
-        item.addEventListener("click", () => {
-            const sym = item.dataset.symbol;
-            loadChart(sym);
-        });
+// -----------------------------
+// WATCHLIST CLICK EVENT
+// -----------------------------
+watchlistItems.forEach(item => {
+    item.addEventListener("click", () => {
+        const symbol = item.dataset.symbol;
+        loadChart(symbol);
     });
-}
-
-// ==============================
-// RESIZE HANDLER
-// ==============================
-window.addEventListener("resize", () => {
-    if (chart) {
-        chart.applyOptions({
-            width: chartContainer.clientWidth,
-            height: chartContainer.clientHeight
-        });
-    }
 });
 
-// ==============================
-// INITIALIZE APP
-// ==============================
-function init() {
-    initChart();
-    initWatchlist();
-
-    // Load default chart
-    loadChart("RELIANCE.NS");
-}
-
-init();
+// Load default
+loadChart("RELIANCE.NS");
