@@ -385,7 +385,7 @@ renderPresets();
    If response contains nested structure (like yahoo), this function attempts to normalize it.
 */
 async function fetchOHLC(symbol, range='1y', granularity='1d'){
-  const url = WORKER_URL + encodeURIComponent(symbol) + `&range=${range}&granularity=${granularity}`;
+  const url = https://black-tree-2e32.sriviadithi.workers.dev/ + encodeURIComponent(symbol) + `&range=${range}&granularity=${granularity}`;
   try{
     const res = await fetch(url, {cache:'no-store'});
     if(!res.ok) throw new Error('HTTP '+res.status);
