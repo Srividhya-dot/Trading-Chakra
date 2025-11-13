@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Chart + Watchlist (Compact Dashboard)</title>
+<title>Chart Dashboard</title>
 
 <!-- Lightweight Charts CDN -->
 <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
@@ -18,109 +18,121 @@
 html,body{height:100%;margin:0;background:var(--bg);color:#e6eef8}
 .app{display:flex;height:100vh;overflow:hidden}
 
-/* Left watchlist (collapsible) */
+/* Left watchlist */
 .side{
-  width:320px;
-  background:linear-gradient(180deg,#071a27 0,#071a27 100%);
+  width:300px;
+  background:#071a27;
   padding:18px;
-  border-right:1px solid rgba(255,255,255,0.03);
+  border-right:1px solid rgba(255,255,255,0.05);
   overflow:auto;
 }
-.side h2{margin:0 0 12px;color:var(--accent);font-size:30px}
-.input, .btn{border-radius:8px;border:none;padding:10px}
-.search{width:100%;background:#071826;color:#cfe6ff;padding:10px;margin-bottom:12px}
+.side h2{margin:0 0 12px;color:var(--accent);font-size:28px}
+.search{width:100%;background:#071826;color:#cfe6ff;padding:10px;margin-bottom:12px;border-radius:8px;border:none}
 .watchlist{list-style:none;padding:0;margin:0}
 .watchlist li{
-  background:#122b36;margin:10px 0;padding:16px;border-radius:8px;cursor:pointer;
+  background:#122b36;margin:8px 0;padding:12px;border-radius:8px;cursor:pointer;
   text-transform:uppercase;letter-spacing:0.6px;color:#e6eef8;font-weight:600
 }
 .watchlist li.active{background:#244f63}
 .add-row{display:flex;gap:8px;margin-top:12px}
-.add-row input{flex:1;background:#071026;padding:10px;color:#cfe6ff}
-.add-row button{background:var(--accent);color:#042330;padding:10px 14px;cursor:pointer}
+.add-row input{flex:1;background:#071026;padding:10px;color:#cfe6ff;border-radius:8px;border:none}
+.add-row button{background:var(--accent);color:#042330;padding:10px 14px;border-radius:8px;border:none;cursor:pointer}
 
-/* Preset and controls */
-.panel{
-  margin-top:20px;background:rgba(255,255,255,0.02);padding:12px;border-radius:8px
+/* Ribbon indicator bar */
+.ribbon{
+  width:100%;
+  padding:10px 16px;
+  background:#0d2030;
+  display:flex;
+  gap:16px;
+  border-bottom:1px solid rgba(255,255,255,0.05);
 }
-.panel h3{margin:0 0 8px;font-size:16px}
-.preset-row{display:flex;gap:8px;align-items:center}
-.small{font-size:13px;color:var(--muted)}
-.preset-list{margin-top:8px;font-size:13px}
-
+.ribbon-item{
+  color:var(--muted);
+  font-size:13px;
+  display:flex;
+  flex-direction:column;
+}
+.ribbon-item label{font-size:12px;margin-bottom:2px;color:#7ea0c4}
+.ribbon-item input,.ribbon-item select{
+  background:#071827;
+  border:none;
+  padding:6px;
+  color:#cfe6ff;
+  border-radius:6px;
+}
 /* Main chart area */
 .main{flex:1;display:flex;flex-direction:column;min-width:0}
-.toolbar{height:64px;background:linear-gradient(90deg,rgba(0,0,0,0.3),rgba(0,0,0,0.05));display:flex;align-items:center;padding:0 18px;border-bottom:1px solid rgba(255,255,255,0.03);gap:16px}
+.toolbar{
+  height:60px;
+  background:#0c1824;
+  display:flex;
+  align-items:center;
+  padding:0 18px;
+  border-bottom:1px solid rgba(255,255,255,0.05);
+  gap:16px;
+}
 .title{font-weight:700;font-size:20px}
-.tf-group{display:flex;gap:8px;margin-left:8px}
-.tf-btn{background:rgba(255,255,255,0.03);border-radius:8px;padding:8px 12px;border:none;color:#cfe6ff;cursor:pointer}
+
+.tf-group{display:flex;gap:6px;margin-left:10px}
+.tf-btn{
+  background:#071826;
+  border-radius:6px;
+  padding:6px 10px;
+  border:none;
+  color:#cfe6ff;
+  cursor:pointer;
+  font-size:13px
+}
 .tf-btn.active{background:var(--accent);color:#01222b}
 
-/* top-right toggles */
-.toggles{margin-left:auto;display:flex;gap:12px;align-items:center}
+.toggles{margin-left:auto;display:flex;gap:14px;align-items:center}
 .toggle{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--muted)}
 
-/* chart container */
-.chart-wrap{flex:1;display:flex;min-height:0;position:relative}
-.chart-box{flex:1;background:var(--surface);padding:12px;display:flex;flex-direction:column;min-height:0}
-#chart{flex:1;min-height:0;border-radius:6px}
+.chart-wrap{flex:1;display:flex;position:relative}
+.chart-box{flex:1;background:var(--surface);padding:0;display:flex;flex-direction:column}
+#chart{flex:1;min-height:0;border-radius:0}
 
-/* right indicator panel */
-.right{
-  width:360px;background:linear-gradient(180deg,#06151e,#071a24);padding:18px;border-left:1px solid rgba(255,255,255,0.03);overflow:auto
+.spinner,.error{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  padding:12px 18px;border-radius:10px;font-weight:700
 }
-.right h3{color:var(--accent);margin:0 0 12px}
-.ctrl{margin-bottom:12px}
-.ctrl label{display:block;color:var(--muted);font-size:13px;margin-bottom:6px}
-.ctrl input[type="number"], .ctrl input[type="text"], .ctrl select{width:100%;padding:8px;border-radius:6px;border:none;background:#071827;color:#cfe6ff}
-
-/* error & spinner */
-.spinner, .error{
-  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.7);padding:12px 18px;border-radius:10px;font-weight:700
-}
+.spinner{background:rgba(0,0,0,0.6)}
 .error{background:#2b0f0f;color:#ffd2d2;display:none}
 .hidden{display:none}
 
 /* responsive */
-@media (max-width:1000px){
+@media(max-width:900px){
   .side{display:none}
-  .right{display:none}
+  .ribbon{display:none}
 }
 </style>
 </head>
-<body>
 
+<body>
 <div class="app">
-  <!-- LEFT WATCHLIST / PRESETS -->
-  <aside class="side" id="leftPanel">
+
+  <!-- LEFT WATCHLIST -->
+  <aside class="side">
     <h2>Watchlist</h2>
     <input id="searchInput" class="search" placeholder="Search symbol..." />
-    <ul id="watchlist" class="watchlist">
-      <!-- items injected -->
-    </ul>
+
+    <ul id="watchlist" class="watchlist"></ul>
 
     <div class="add-row">
       <input id="addSymbol" placeholder="Add symbol, e.g. RELIANCE.NS" />
       <button id="addBtn">Add</button>
     </div>
-
-    <div class="panel">
-      <h3>Presets</h3>
-      <div class="preset-row">
-        <input id="presetName" placeholder="Give preset a name" />
-        <button id="savePreset" style="background:var(--accent);padding:8px 14px;border-radius:8px;color:#01222b">Save</button>
-      </div>
-      <div style="margin-top:8px"><button id="exportPresets" style="background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,0.03);padding:8px;border-radius:8px">Export</button></div>
-      <div class="preset-list" id="presetList">Saved presets:</div>
-    </div>
   </aside>
 
   <!-- MAIN -->
   <main class="main">
+
+    <!-- TIMEFRAMES + TOGGLES -->
     <div class="toolbar">
       <div class="title" id="symbolTitle">Loading...</div>
+
       <div class="tf-group" id="timeframes">
-        <!-- timeframe buttons -->
         <button class="tf-btn" data-tf="1m">1m</button>
         <button class="tf-btn" data-tf="5m">5m</button>
         <button class="tf-btn" data-tf="15m">15m</button>
@@ -132,75 +144,74 @@ html,body{height:100%;margin:0;background:var(--bg);color:#e6eef8}
       </div>
 
       <div class="toggles">
-        <div class="toggle"><input type="checkbox" id="toggleReliable" checked/> Reliable</div>
-        <div class="toggle"><input type="checkbox" id="toggleLux" checked/> Lux</div>
-        <div class="toggle"><input type="checkbox" id="toggleIsland" checked/> Island</div>
+        <div class="toggle"><input type="checkbox" id="toggleReliable" checked /> Reliable</div>
+        <div class="toggle"><input type="checkbox" id="toggleLux" checked /> Lux</div>
+        <div class="toggle"><input type="checkbox" id="toggleIsland" checked /> Island</div>
       </div>
+    </div>
+
+    <!-- RIBBON (Indicators moved here) -->
+    <div class="ribbon">
+      <div class="ribbon-item">
+        <label>Pivot L</label>
+        <input id="pivotLeft" type="number" value="15" />
+      </div>
+      <div class="ribbon-item">
+        <label>Pivot R</label>
+        <input id="pivotRight" type="number" value="15" />
+      </div>
+
+      <div class="ribbon-item">
+        <label>Lux Len</label>
+        <input id="luxLen1" type="number" value="50" />
+      </div>
+      <div class="ribbon-item">
+        <label>Lux Mult</label>
+        <input id="luxMlt1" type="number" step="0.1" value="2" />
+      </div>
+
+      <div class="ribbon-item">
+        <label>Island Trend</label>
+        <input id="islandTrend" type="number" value="10" />
+      </div>
+      <div class="ribbon-item">
+        <label>Island Vol</label>
+        <select id="islandVolFilter">
+          <option value="true" selected>On</option>
+          <option value="false">Off</option>
+        </select>
+      </div>
+
+      <div class="ribbon-item">
+        <label>Volume</label>
+        <select id="showVolume">
+          <option value="true" selected>Show</option>
+          <option value="false">Hide</option>
+        </select>
+      </div>
+
+      <div class="ribbon-item">
+        <label>Poll (sec)</label>
+        <input id="pollInterval" type="number" value="5" />
+      </div>
+
+      <button id="applyIndicators" style="margin-left:auto;background:var(--accent);color:#01222b;border:none;border-radius:6px;padding:8px 14px;cursor:pointer">Apply</button>
     </div>
 
     <div class="chart-wrap">
       <div class="chart-box">
         <div id="chart"></div>
-        <div id="spinner" class="spinner">Loading...</div>
+        <div id="spinner" class="spinner hidden">Loading...</div>
         <div id="error" class="error"></div>
       </div>
     </div>
+
   </main>
-
-  <!-- RIGHT indicators & controls -->
-  <aside class="right">
-    <h3>Indicator Controls</h3>
-
-    <div class="ctrl">
-      <label><input type="checkbox" id="showVolume" checked/> Show volume</label>
-    </div>
-
-    <div class="ctrl">
-      <label>Reliable S/R: Pivot left</label>
-      <input id="pivotLeft" type="number" min="1" value="15" />
-      <label style="margin-top:8px">Pivot right</label>
-      <input id="pivotRight" type="number" min="1" value="15" />
-    </div>
-
-    <div class="ctrl">
-      <label>LuxAlgo S/R (len1, mlt1)</label>
-      <input id="luxLen1" type="number" min="2" value="50" />
-      <input id="luxMlt1" type="number" min="0.1" step="0.1" value="2" />
-    </div>
-
-    <div class="ctrl">
-      <label>Island Reversal: Trend length</label>
-      <input id="islandTrend" type="number" min="2" value="10" />
-      <label style="margin-top:8px"><input type="checkbox" id="islandVolFilter" checked/> Volume filter</label>
-    </div>
-
-    <div style="margin-top:10px">
-      <button id="applyIndicators" style="background:var(--accent);color:#01222b;padding:10px;border-radius:8px;border:none">Apply</button>
-    </div>
-
-    <hr style="margin:14px 0;border:none;border-top:1px solid rgba(255,255,255,0.03)">
-
-    <div class="small">Live update interval (sec)</div>
-    <input id="pollInterval" type="number" min="2" value="5" style="width:100%;padding:10px;border-radius:8px;background:#071827;margin-top:8px"/>
-
-    <div style="margin-top:14px" class="small">Notes:</div>
-    <div class="small" style="color:var(--muted);margin-top:6px">
-      Live updates poll your data endpoint during trading hours. After market close the chart is displayed as EOD.
-    </div>
-  </aside>
-</div>
-
 <script>
-/*
-  Complete single-file app.
-  - Replace WORKER_URL with your own data worker if needed.
-  - This app expects worker to return array of {time,open,high,low,close,volume} in epoch seconds for daily (or specified).
-  - If you have alternate endpoints, adjust fetchOHLC function.
-*/
 
 /* ---------------- CONFIG ---------------- */
-const WORKER_URL = "https://black-tree-2e32.sriviadithi.workers.dev/?symbol="; // default worker
-const DEFAULT_SYMBOLS = ["RELIANCE.NS","TCS.NS","INFY.NS","HDFCBANK.NS","ICICIBANK.NS"];
+const WORKER_URL = "https://black-tree-2e32.sriviadithi.workers.dev/?symbol=";
+const DEFAULT_SYMBOLS = ["RELIANCE.NS","TCS.NS","INFY.NS","HDFCBANK.NS"];
 
 /* DOM */
 const watchlistEl = document.getElementById('watchlist');
@@ -213,7 +224,7 @@ const addSymbolInput = document.getElementById('addSymbol');
 const addBtn = document.getElementById('addBtn');
 const searchInput = document.getElementById('searchInput');
 
-const tfButtons = Array.from(document.querySelectorAll('.tf-btn'));
+const tfButtons = [...document.querySelectorAll('.tf-btn')];
 const showVolume = document.getElementById('showVolume');
 
 const toggleReliable = document.getElementById('toggleReliable');
@@ -232,559 +243,214 @@ const islandVolFilter = document.getElementById('islandVolFilter');
 const applyIndicatorsBtn = document.getElementById('applyIndicators');
 const pollIntervalInput = document.getElementById('pollInterval');
 
-const presetName = document.getElementById('presetName');
-const savePresetBtn = document.getElementById('savePreset');
-const presetList = document.getElementById('presetList');
-const exportPresetsBtn = document.getElementById('exportPresets');
-
 let watchSymbols = JSON.parse(localStorage.getItem('watchSymbols')) || DEFAULT_SYMBOLS.slice();
-let presets = JSON.parse(localStorage.getItem('chartPresets')) || {};
 
-/* ---------------- CHART SETUP ---------------- */
 let chart = null;
 let candleSeries = null;
 let volumeSeries = null;
-let srLines = []; // store lines for indicators
+let srLines = [];
 let lastSymbol = null;
-let activeTF = '1D';
+let activeTF = "1D";
 let pollTimer = null;
 
+
+/* ---------------- CHART CREATION ---------------- */
 function createChart(){
   if(chart) return;
 
   chart = LightweightCharts.createChart(chartDiv, {
-    layout: { backgroundColor: "#0f1724", textColor: "#d1d4dc" },
-    rightPriceScale: { borderColor: "#485c7b" },
-    timeScale: { borderColor: "#485c7b", timeVisible: true, secondsVisible: false },
-    grid: { vertLines: {color:'#253248'}, horzLines:{color:'#253248'} }
+    layout:{ backgroundColor:"#0f1724", textColor:"#d1d4dc" },
+    rightPriceScale:{ borderColor:"#485c7b" },
+    timeScale:{ borderColor:"#485c7b", timeVisible:true },
+    grid:{ vertLines:{color:"#253248"}, horzLines:{color:"#253248"} }
   });
 
   candleSeries = chart.addCandlestickSeries({
-    upColor: "#22c55e", downColor: "#ef4444", borderVisible:true, wickVisible:true
+    upColor:"#22c55e", downColor:"#ef4444",
+    wickVisible:true, borderVisible:true
   });
 
   volumeSeries = chart.addHistogramSeries({
-    priceFormat: { type: 'volume' },
-    priceScaleId: '',
-    scaleMargins: { top: 0.8, bottom: 0 },
+    priceScaleId:'',
+    scaleMargins:{ top:0.8, bottom:0 },
+    priceFormat:{ type:"volume" }
   });
 }
 
-/* --------------- UI helpers --------------- */
+/* UI helpers */
 function showSpinner(){ spinner.classList.remove('hidden'); }
 function hideSpinner(){ spinner.classList.add('hidden'); }
-function showError(msg){ errorBox.style.display='block'; errorBox.textContent = msg; }
+function showError(msg){ errorBox.textContent=msg; errorBox.style.display='block'; }
 function hideError(){ errorBox.style.display='none'; }
 
-/* populate watchlist */
+/* Render watchlist */
 function renderWatchlist(){
   watchlistEl.innerHTML = '';
-  for(let sym of watchSymbols){
-    const li = document.createElement('li');
-    li.textContent = sym;
-    li.dataset.symbol = sym;
-    li.addEventListener('click', ()=> loadChart(sym));
+  watchSymbols.forEach(sym=>{
+    const li=document.createElement('li');
+    li.textContent=sym;
+    li.dataset.symbol=sym;
+    li.onclick=()=>loadChart(sym);
     watchlistEl.appendChild(li);
+  });
+}
+renderWatchlist();
+
+addBtn.onclick = ()=>{
+  const v = addSymbolInput.value.trim().toUpperCase();
+  if(v && !watchSymbols.includes(v)){
+    watchSymbols.unshift(v);
+    localStorage.setItem('watchSymbols',JSON.stringify(watchSymbols));
+    renderWatchlist();
+    loadChart(v);
   }
-  attachActiveToList(lastSymbol);
-}
-function attachActiveToList(sym){
-  Array.from(watchlistEl.children).forEach(li=>{
-    li.classList.toggle('active', li.dataset.symbol === sym);
-  });
-}
-
-/* Add/remove watchlist */
-addBtn.addEventListener('click', ()=>{
-  const v = (addSymbolInput.value || '').trim().toUpperCase();
-  if(!v) return;
-  if(!watchSymbols.includes(v)){ watchSymbols.unshift(v); localStorage.setItem('watchSymbols', JSON.stringify(watchSymbols)); renderWatchlist(); }
   addSymbolInput.value='';
-  loadChart(v);
-});
-searchInput.addEventListener('input', e=>{
-  const q = e.target.value.trim().toLowerCase();
-  Array.from(watchlistEl.children).forEach(li=>{
-    li.style.display = q && !li.textContent.toLowerCase().includes(q) ? 'none' : '';
-  });
-});
+};
 
-/* timeframes */
+searchInput.oninput = e=>{
+  const q = e.target.value.trim().toLowerCase();
+  [...watchlistEl.children].forEach(li=>{
+    li.style.display = li.textContent.toLowerCase().includes(q) ? "" : "none";
+  });
+};
+
+/* Timeframe buttons */
 tfButtons.forEach(btn=>{
-  btn.addEventListener('click', ()=>{
+  btn.onclick = ()=>{
     tfButtons.forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
     activeTF = btn.dataset.tf;
     if(lastSymbol) loadChart(lastSymbol);
-  });
-});
-
-/* presets */
-function renderPresets(){
-  presetList.innerHTML = 'Saved presets:';
-  const keys = Object.keys(presets);
-  if(!keys.length) { presetList.innerHTML += '<div style="color:var(--muted);margin-top:6px">no saved presets</div>'; return; }
-  for(const k of keys){
-    const div = document.createElement('div');
-    div.style.marginTop='6px';
-    div.innerHTML = `<strong style="margin-right:8px">${k}</strong>
-      <button data-name="${k}" class="loadPreset" style="margin-right:6px">Load</button>
-      <button data-name="${k}" class="delPreset" style="background:transparent;color:var(--muted)">Delete</button>`;
-    presetList.appendChild(div);
-  }
-  Array.from(document.getElementsByClassName('loadPreset')).forEach(b=>{
-    b.addEventListener('click', ()=> {
-      const name = b.dataset.name; applyPreset(presets[name]);
-    });
-  });
-  Array.from(document.getElementsByClassName('delPreset')).forEach(b=>{
-    b.addEventListener('click', ()=> {
-      const name = b.dataset.name; delete presets[name]; localStorage.setItem('chartPresets', JSON.stringify(presets)); renderPresets();
-    });
-  });
-}
-savePresetBtn.addEventListener('click', ()=>{
-  const name = (presetName.value||'').trim();
-  if(!name) { alert('Give preset a name'); return; }
-  const preset = {
-    pivotLeft: pivotLeft.valueAsNumber,
-    pivotRight: pivotRight.valueAsNumber,
-    luxLen1: luxLen1.valueAsNumber,
-    luxMlt1: luxMlt1.valueAsNumber,
-    islandTrend: islandTrend.valueAsNumber,
-    islandVolFilter: islandVolFilter.checked,
-    toggles: { reliable: toggleReliable.checked, lux: toggleLux.checked, island: toggleIsland.checked }
   };
-  presets[name] = preset;
-  localStorage.setItem('chartPresets', JSON.stringify(presets));
-  renderPresets();
-  presetName.value = '';
 });
-exportPresetsBtn.addEventListener('click', ()=> {
-  const blob = new Blob([JSON.stringify(presets, null, 2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href=url; a.download='presets.json'; a.click();
-  URL.revokeObjectURL(url);
-});
-function applyPreset(p){
-  pivotLeft.value = p.pivotLeft; pivotRight.value = p.pivotRight;
-  luxLen1.value = p.luxLen1; luxMlt1.value = p.luxMlt1;
-  islandTrend.value = p.islandTrend; islandVolFilter.checked = p.islandVolFilter;
-  toggleReliable.checked = !!p.toggles.reliable;
-  toggleLux.checked = !!p.toggles.lux;
-  toggleIsland.checked = !!p.toggles.island;
-  document.getElementById('applyIndicators').click();
-}
-
-/* initial render */
-renderWatchlist();
-renderPresets();
-
-/* ---------------- FETCH / DATA ----------------
-   fetchOHLC: tries worker endpoint; expects array of ohlc objects with epoch seconds: {time,open,high,low,close,volume}
-   If response contains nested structure (like yahoo), this function attempts to normalize it.
-*/
-async function fetchOHLC(symbol, range='1y', granularity='1d'){
-  const url = WORKER_URL + encodeURIComponent(symbol) + `&range=${range}&granularity=${granularity}`;
+/* Fetch OHLC */
+async function fetchOHLC(symbol){
+  const url = WORKER_URL + symbol;
   try{
-    const res = await fetch(url, {cache:'no-store'});
-    if(!res.ok) throw new Error('HTTP '+res.status);
+    const res = await fetch(url,{cache:"no-store"});
     const json = await res.json();
 
-    // If worker returns simple array
-    if(Array.isArray(json)) return json.map(normalizeBar);
+    if(Array.isArray(json)) return json;
 
-    // If worker returns Yahoo-like object result (attempt to parse)
-    if(json && json.chart && json.chart.result && json.chart.result[0]){
+    if(json?.chart?.result?.[0]){
       const r = json.chart.result[0];
-      const timestamps = r.timestamp || r.indicators?.quote?.[0]?.timestamp || r.timestamp;
-      const quote = r.indicators?.quote?.[0];
-      if(Array.isArray(timestamps) && quote){
-        const out = [];
-        for(let i=0;i<timestamps.length;i++){
-          const t = timestamps[i]; // may be in seconds
-          const o = quote.open?.[i] ?? quote.open?.[i];
-          const h = quote.high?.[i];
-          const l = quote.low?.[i];
-          const c = quote.close?.[i];
-          const v = quote.volume?.[i] ?? 0;
-          if(o==null||h==null||l==null||c==null) continue;
-          out.push({time: t, open:o, high:h, low:l, close:c, volume:v});
-        }
-        return out.map(normalizeBar);
+      const ts = r.timestamp;
+      const q = r.indicators.quote[0];
+      const out=[];
+      for(let i=0;i<ts.length;i++){
+        if(q.open[i]==null) continue;
+        out.push({
+          time:ts[i],
+          open:q.open[i],
+          high:q.high[i],
+          low:q.low[i],
+          close:q.close[i],
+          volume:q.volume[i]||0
+        });
       }
+      return out;
     }
 
-    // If worker returned wrapper {data: [...]}
-    if(json && json.data && Array.isArray(json.data)) return json.data.map(normalizeBar);
-
-    // otherwise, try to map if it's already keyed
-    if(Array.isArray(json.dataPoints)) return json.dataPoints.map(normalizeBar);
-
-    console.warn('Unrecognized response format from data worker', json);
     return [];
-  }catch(err){
-    console.error('fetchOHLC error', err);
+  }catch(e){
     return [];
   }
 }
 
-function normalizeBar(b){
-  // Accept either epoch seconds or milliseconds
-  let t = b.time || b[0] || b.timestamp || b.date || null;
-  if(t==null) return null;
-  // if timestamp looks like ms (>= 1e12) convert to seconds
-  if(t > 1e12) t = Math.floor(t/1000);
-  // reduce to whole seconds
-  t = Math.floor(t);
-  return { time: t, open:+b.open, high:+b.high, low:+b.low, close:+b.close, volume:+(b.volume||0) };
+/* Convert TF (simplified) */
+function convertTF(bars, tf){
+  return bars; // keep simple for now
 }
 
-/* ------------- TIMEFRAME CONVERSION -------------
-  convertToTF: convert source candles (sourceGranularity in seconds) into requested TF
-  For daily source -> produce intraday synthetic (interpolated) for 1m/5m/15m etc (approx)
-*/
-const tfSeconds = {
-  '1m':60, '5m':300, '15m':900, '30m':1800, '60m':3600,
-  '1D':86400, '1W':86400*7, '1M':86400*30
-};
-
-function convertToTF(sourceBars, sourceSec, targetTF){
-  // sourceBars: array sorted chronologically ascending
-  const targetSec = tfSeconds[targetTF] || 86400;
-  if(sourceSec === targetSec) return sourceBars.slice();
-
-  // If target is higher (e.g., from 1D -> 1W/1M): aggregate
-  if(targetSec >= sourceSec){
-    // group by floor(time/targetSec)
-    const groups = new Map();
-    for(const b of sourceBars){
-      const key = Math.floor(b.time / targetSec);
-      if(!groups.has(key)) groups.set(key, []);
-      groups.get(key).push(b);
-    }
-    const out = [];
-    for(const [k, arr] of groups){
-      const o = arr[0].open;
-      const h = Math.max(...arr.map(x=>x.high));
-      const l = Math.min(...arr.map(x=>x.low));
-      const c = arr[arr.length-1].close;
-      const v = arr.reduce((s,x)=>s+x.volume,0);
-      out.push({time: k * targetSec, open:o, high:h, low:l, close:c, volume:v});
-    }
-    return out;
+/* Indicators */
+function clearIndicators(){
+  for(const l of srLines){
+    try{ chart.removePriceLine(l); }catch(_){}
   }
-
-  // If target is lower (making intraday from daily), we synthesize by splitting each day into smaller bars
-  // This is approximate: replicate bar close movements across the intraday bars.
-  const out = [];
-  for(const day of sourceBars){
-    const parts = Math.floor(86400 / targetSec);
-    if(parts < 1) parts = 1;
-    // linear interpolation between open -> close for intraday bodies, use high/low spikes on the nearest part
-    for(let p=0;p<parts;p++){
-      const t = day.time + p * targetSec;
-      // simple interpolation
-      const alpha = (p + 0.5) / parts;
-      const open = day.open;
-      const close = day.close;
-      const o = open + (close - open) * (p / parts);
-      const c = open + (close - open) * ((p + 1) / parts);
-      // intraday highs/lows are bounded by day high/low
-      const h = Math.max(o, c, day.high * (0.98 + 0.02*Math.random()));
-      const l = Math.min(o, c, day.low * (1 - 0.02*Math.random()));
-      const v = Math.round(day.volume / parts);
-      out.push({time: t, open:o, high:h, low:l, close:c, volume:v});
-    }
-  }
-  return out;
+  srLines=[];
 }
 
-/* ----------- Indicator engines (simplified & robust) ----------
-   Each indicator takes chronological ascending array of bars (time increasing).
-   They return arrays of horizontal levels {price, label, color, width}
-*/
-
-/* Reliable S/R: pivot-based horizontal lines */
-function computeReliableSR(bars, left=15, right=15){
-  const levels = [];
-  // Use classic pivot high/low detection
-  for(let i=left; i<bars.length-right; i++){
-    const isPH = bars.slice(i-right, i+right+1).every((b, idx, arr) => {
-      if(idx===right) return true;
-      return bars[i].high > arr[idx].high;
-    });
-    const isPL = bars.slice(i-right, i+right+1).every((b, idx, arr) => {
-      if(idx===right) return true;
-      return bars[i].low < arr[idx].low;
-    });
-    if(isPH) levels.push({price: bars[i].high, label:'PH', color:'#ef4444', width:2});
-    if(isPL) levels.push({price: bars[i].low, label:'PL', color:'#22c55e', width:2});
-  }
-
-  // Deduplicate by price proximity (merge near levels)
-  const merged = [];
-  const tol = 1e-6;
-  levels.sort((a,b)=>b.price-a.price);
+function drawLevels(levels){
   for(const L of levels){
-    const found = merged.find(m=>Math.abs(m.price - L.price) < (L.price*0.0015 + tol));
-    if(found){
-      found.count=(found.count||1)+1;
-      found.price = (found.price + L.price)/2;
-    } else merged.push({...L,count:1});
+    const line = candleSeries.createPriceLine({
+      price:L.price,
+      color:L.color,
+      title:L.label,
+      lineWidth:2
+    });
+    srLines.push(line);
   }
-  // rank by count (how many pivot confirmations)
-  merged.sort((a,b)=>b.count - a.count);
-  return merged.slice(0, 50);
 }
 
-/* LuxAlgo-like S/R simplified (SMA + multiples and fibonacci-like layers)
-   We implement only the essentials: multiple series of moving averages + bands
-*/
-function computeLuxSR(bars, len=50, mlt=2){
-  // compute sma
-  const closes = bars.map(b=>b.close);
-  const sma = [];
-  let sum=0;
-  for(let i=0;i<closes.length;i++){
-    sum += closes[i];
-    if(i>=len) sum -= closes[i-len];
-    if(i>=len-1) sma.push({time:bars[i].time, value: sum/len});
-    else sma.push({time:bars[i].time, value: null});
+function computeReliable(bars){
+  const lev=[];
+  for(let i=2;i<bars.length-2;i++){
+    if(bars[i].high>bars[i-1].high && bars[i].high>bars[i+1].high){
+      lev.push({price:bars[i].high,label:'PH',color:'#ef4444'});
+    }
+    if(bars[i].low<bars[i-1].low && bars[i].low<bars[i+1].low){
+      lev.push({price:bars[i].low,label:'PL',color:'#22c55e'});
+    }
   }
-  // compute BBands upper/lower
-  const levels = [];
-  for(let i=len-1;i<sma.length;i++){
-    const win = closes.slice(i-len+1, i+1);
-    const mean = sma[i].value;
-    const variance = win.reduce((s,x)=>s+Math.pow(x-mean,2),0)/len;
-    const std = Math.sqrt(variance);
-    const upper = mean + mlt*std;
-    const lower = mean - mlt*std;
-    levels.push({time:bars[i].time, sma:mean, upper, lower});
-  }
-  // Produce horizontal levels at the last visible sma/upper/lower
-  const last = levels[levels.length-1];
-  if(!last) return [];
+  return lev;
+}
+
+function computeLux(bars){
+  if(bars.length<50) return [];
+  const last = bars[bars.length-1];
   return [
-    {price:last.upper, label:'Lux Upper', color:'#ffd166', width:1},
-    {price:last.sma, label:'Lux SMA', color:'#60a5fa', width:2},
-    {price:last.lower, label:'Lux Lower', color:'#7c3aed', width:1}
+    {price:last.high,label:"Lux High",color:"#60a5fa"},
+    {price:last.low,label:"Lux Low",color:"#7c3aed"}
   ];
 }
 
-/* Island Reversal simplified detection: find bullish/bearish gap islands and return box ranges */
-function computeIslandReversals(bars, trendLen=10, volFilter=true){
-  const reversals = [];
-  // naive detection: check for gap up/down between consecutive bars:
-  for(let i=1;i<bars.length-1;i++){
-    const prev = bars[i-1];
-    const cur = bars[i];
-    const next = bars[i+1];
-    // bullish island: gap up (cur.low > prev.high) then gap down (next.high < cur.low) - small window
-    if(cur.low > prev.high && next.high < cur.low){
-      // compute aggregated top/bottom within island region (prev,end)
-      // verify volume filter: island volume > avg(prev N)
-      let volAvg = 0;
-      for(let j=Math.max(0,i-trendLen); j<i; j++) volAvg += bars[j].volume;
-      volAvg = volAvg / Math.min(trendLen, i);
-      const islandVol = cur.volume;
-      if(volFilter && islandVol < volAvg) continue;
-      reversals.push({startTime:cur.time, endTime:next.time, top:cur.high, bottom:cur.low, bullish:true});
-    }
-    // bearish island: gap down then gap up
-    if(cur.high < prev.low && next.low > cur.high){
-      let volAvg = 0;
-      for(let j=Math.max(0,i-trendLen); j<i; j++) volAvg += bars[j].volume;
-      volAvg = volAvg / Math.min(trendLen, i);
-      const islandVol = cur.volume;
-      if(volFilter && islandVol < volAvg) continue;
-      reversals.push({startTime:cur.time, endTime:next.time, top:cur.high, bottom:cur.low, bullish:false});
-    }
-  }
-  return reversals;
-}
+function computeIsland(){ return []; }
 
-/* Draw indicators on chart: horizontal lines + boxes for island */
-function clearIndicators(){
-  // remove line objects created via series price lines (we use price lines using priceAxis)
-  if(srLines.length) {
-    for(const obj of srLines) {
-      try{ chart.removePriceLine(obj); }catch(e){}
-    }
-  }
-  srLines=[];
-  // remove any custom drawing: we'll use chart.addLineSeries for each (but simpler: price lines)
-}
-
-/* Draw S/R from computed arrays */
-function drawIndicators(levels, opts={}) {
-  // levels: array of {price,label,color,width}
-  for(const L of levels){
-    try{
-      const pl = candleSeries.createPriceLine({
-        price: L.price,
-        color: L.color || '#999',
-        lineWidth: L.width || 1,
-        lineStyle: LightweightCharts.LineStyle.Solid,
-        axisLabelVisible: true,
-        title: L.label || ''
-      });
-      srLines.push(pl);
-    }catch(e){ console.warn('createPriceLine failed', e); }
-  }
-}
-
-/* Draw island reversals as boxes using lightweight-charts combined series */
-function drawIslands(islands){
-  // We'll draw using area series overlay: create a temporary histogram to show background
-  // lightweight-charts does not have rectangle drawing via API; we'll indicate islands with price lines top/bottom and small price lines
-  for(const it of islands){
-    const color = it.bullish ? 'rgba(8,153,129,0.12)' : 'rgba(242,54,69,0.12)';
-    const topLine = candleSeries.createPriceLine({price:it.top, color:color, lineWidth:2, title:it.bullish ? 'Island Top' : 'Island Top'});
-    const botLine = candleSeries.createPriceLine({price:it.bottom, color:color, lineWidth:2, title:it.bullish ? 'Island Bottom' : 'Island Bottom'});
-    srLines.push(topLine, botLine);
-  }
-}
-
-/* ------------------- Main loader ------------------ */
+/* Load chart */
 async function loadChart(symbol){
-  if(!symbol) return;
   lastSymbol = symbol;
-  attachActiveToList(symbol);
   createChart();
   showSpinner();
   hideError();
-  symbolTitle.innerText = symbol;
+  symbolTitle.textContent = symbol;
 
-  // source fetch (we ask worker for daily by default)
-  const srcBars = await fetchOHLC(symbol, '1y', '1d');
+  let bars = await fetchOHLC(symbol);
   hideSpinner();
-  if(!srcBars || srcBars.length===0){
-    showError('No data returned for ' + symbol);
+
+  if(!bars.length){
+    showError("No data");
     return;
   }
 
-  // ensure ascending chronological order
-  srcBars.sort((a,b)=>a.time - b.time);
+  bars.sort((a,b)=>a.time-b.time);
+  bars = convertTF(bars,activeTF);
 
-  /* Convert source (assume daily seconds) to requested timeframe */
-  // detect source interval: if timestamps consecutive diff > 4000 -> daily; try to compute period
-  let srcSec = 86400;
-  if(srcBars.length >= 2) srcSec = Math.max(60, Math.round((srcBars[1].time - srcBars[0].time)));
-  // Convert
-  const bars = convertToTF(srcBars, srcSec, activeTF);
+  candleSeries.setData(bars);
+  chart.timeScale().fitContent();
 
-  // Format for Lightweight charts: requires time either as string 'YYYY-MM-DD' or epoch (seconds)
-  // We will use epoch seconds.
-  const lcData = bars.map(b=>({
-    time: b.time,
-    open: Number(b.open),
-    high: Number(b.high),
-    low: Number(b.low),
-    close: Number(b.close)
-  }));
-
-  try{
-    candleSeries.setData(lcData);
-    chart.timeScale().fitContent();
-  }catch(err){
-    console.error('chart setData error', err);
-    showError('Chart rendering error - data may be malformed.');
-    return;
+  if(showVolume.value==="true"){
+    volumeSeries.setData(bars.map(b=>({
+      time:b.time, value:b.volume, color:b.close>=b.open?'#22c55e':'#ef4444'
+    })));
+  }else{
+    volumeSeries.setData([]);
   }
 
-  // volume set
-  if(showVolume.checked){
-    const vData = bars.map(b=>({time:b.time, value: b.volume, color: b.close >= b.open ? '#22c55e' : '#ef4444'}));
-    try{ volumeSeries.setData(vData); }catch(e){}
-  } else {
-    try{ volumeSeries.setData([]); }catch(e){}
-  }
-
-  // indicators (apply if toggled)
   clearIndicators();
-  if(toggleReliable.checked){
-    const levels = computeReliableSR(bars, pivotLeft.valueAsNumber || 15, pivotRight.valueAsNumber || 15);
-    drawIndicators(levels.map(l=>({price:l.price, label:l.label, color:l.color, width:l.width})));
-  }
-  if(toggleLux.checked){
-    const lux = computeLuxSR(bars, luxLen1.valueAsNumber || 50, luxMlt1.valueAsNumber || 2);
-    drawIndicators(lux);
-  }
-  if(toggleIsland.checked){
-    const islands = computeIslandReversals(bars, islandTrend.valueAsNumber || 10, islandVolFilter.checked);
-    drawIslands(islands);
-  }
 
-  // Start live polling for last price if within trading hours
-  setupLivePolling(symbol, srcBars);
+  let levels=[];
+  if(toggleReliable.checked) levels.push(...computeReliable(bars));
+  if(toggleLux.checked)      levels.push(...computeLux(bars));
+
+  drawLevels(levels);
 }
 
-/* ----------------- Live Polling -----------------
-  Polls the worker for the latest tick/quote every N seconds and updates the last candle.
-*/
-function isTradingNow(){
-  // Simple check: if local time between 9:00 and 15:30 IST -> trading hours for NSE
-  const d = new Date();
-  // convert to IST offset +5:30; here user's local may be IST already — we'll assume browser time is local; user in India
-  const hours = d.getHours();
-  const mins = d.getMinutes();
-  // basic window 9:00 - 15:30
-  return (hours > 9 && hours < 16) || (hours === 9 && mins >= 0) || (hours === 15 && mins <= 30);
-}
+applyIndicatorsBtn.onclick = ()=> lastSymbol && loadChart(lastSymbol);
 
-async function fetchLatestQuote(symbol){
-  // we attempt to fetch OHLC for last 2 days and extract latest bar
-  const out = await fetchOHLC(symbol,'5d','1d');
-  if(!out || out.length===0) return null;
-  const last = out[out.length-1];
-  return last;
-}
-
-function setupLivePolling(symbol, srcBars){
-  const interval = Math.max(2, (document.getElementById('pollInterval').valueAsNumber || 5));
-  if(pollTimer) { clearInterval(pollTimer); pollTimer = null; }
-  pollTimer = setInterval(async ()=>{
-    try{
-      if(!isTradingNow()){
-        // after market close – stop updating live; but still allow manual refresh
-        return;
-      }
-      const latest = await fetchLatestQuote(symbol);
-      if(!latest) return;
-      // append or update last candle: convert to activeTF
-      const srcSec = 86400;
-      const bars = convertToTF([latest], srcSec, activeTF);
-      if(bars.length===0) return;
-      const b = bars[0];
-      // update last point in chart by calling setData with previous + new last one
-      const visible = candleSeries.searchPriceLine ? [] : []; // no read of current data: simply append by calling setData expecting whole array
-      // easier: fetch full set again (safe for stability)
-      loadChart(symbol);
-    }catch(err){
-      console.warn('poll error',err);
-    }
-  }, interval*1000);
-}
-
-/* apply indicator button */
-applyIndicatorsBtn.addEventListener('click', ()=>{
-  if(lastSymbol) loadChart(lastSymbol);
-});
-
-/* initial default load */
-if(watchSymbols.length>0) loadChart(watchSymbols[0]);
-
-/* onload attach watchlist render and presets */
-renderWatchlist();
-renderPresets();
-
-/* ensure cleanup on tab close */
-window.addEventListener('beforeunload', ()=> {
-  if(pollTimer) clearInterval(pollTimer);
-});
+/* default load */
+loadChart(watchSymbols[0]);
 
 </script>
+
 </body>
 </html>
