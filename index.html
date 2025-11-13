@@ -3,42 +3,76 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Trading Chakra</title>
-
-  <link rel="stylesheet" href="style.css" />
+  <title>Trading Chakra — Option B (Live + EOD fallback)</title>
 
   <!-- Lightweight Charts (stable) -->
   <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.1/dist/lightweight-charts.standalone.production.js"></script>
+
+  <style>
+    :root{
+      --bg:#0b1220; --panel:#0b1a2a; --muted:#94a3b8; --accent:#38bdf8;
+      --up:#22c55e; --down:#ef4444; --surface:#0f1724;
+    }
+    html,body{height:100%;margin:0;font-family:Inter, Arial, sans-serif;background:var(--bg);color:#e6eef8}
+    #app{display:grid;grid-template-columns:300px 1fr;height:100vh}
+    .sidebar{padding:18px;background:var(--panel);box-sizing:border-box;border-right:1px solid rgba(255,255,255,0.03)}
+    .sidebar h1{margin:0 0 12px 0;color:var(--accent);font-size:34px}
+    #search{width:100%;padding:10px;border-radius:10px;border:none;background:#081021;color:#e6eef8;margin-bottom:12px;box-sizing:border-box}
+    #watchlist{list-style:none;padding:0;margin:0 0 12px 0;max-height:60vh;overflow:auto}
+    #watchlist li{background:#122635;margin:10px 0;padding:14px;border-radius:10px;cursor:pointer;color:#e6eef8; text-transform:uppercase; display:flex;align-items:center;justify-content:space-between}
+    #watchlist li.active{background:#254a63}
+    #add-row{display:flex;gap:8px;margin-top:10px}
+    #add-stock{flex:1;padding:10px;border-radius:8px;border:none;background:#081021;color:#e6eef8}
+    #add-btn{background:var(--accent);border:none;padding:10px 14px;border-radius:8px;cursor:pointer;color:#042426}
+    .chart-area{display:flex;flex-direction:column;height:100vh;background:var(--surface)}
+    #toolbar{height:64px;display:flex;align-items:center;padding:0 16px;border-bottom:1px solid rgba(255,255,255,0.03);gap:14px}
+    #symbol-title{font-weight:700;font-size:18px}
+    #live-price{margin-left:12px;font-weight:600}
+    #timeframes{display:flex;gap:8px;align-items:center}
+    .tf-btn{padding:8px 12px;border-radius:8px;border:none;background:rgba(255,255,255,0.03);cursor:pointer;color:#cfe6f6}
+    .tf-btn.active{background:#1daee9;color:#071826}
+    #chart-wrapper{flex:1;display:flex;flex-direction:column;min-height:0;position:relative}
+    #chart{flex:1;min-height:260px}
+    #volume{height:110px}
+    #spinner{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.6);padding:14px 18px;border-radius:8px;font-weight:700}
+    #error{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:#2b0f0f;color:#ffd2d2;padding:12px 16px;border-radius:8px;display:none}
+    /* responsive */
+    @media (max-width:900px){#app{grid-template-columns:1fr} .sidebar{height:200px;overflow:auto} #chart{height:calc(100vh - 200px)}}
+  </style>
 </head>
 <body>
   <div id="app">
     <aside class="sidebar">
       <h1>Watchlist</h1>
-
-      <input id="search" type="text" placeholder="Search stock..." />
-
+      <input id="search" placeholder="Search stock... (e.g. RELIANCE.NS or NSE:RELIANCE)" />
       <ul id="watchlist"></ul>
 
-      <div id="add-box">
-        <input id="add-stock" type="text" placeholder="Add symbol..." />
+      <div id="add-row">
+        <input id="add-stock" placeholder="Add symbol... e.g. RELIANCE.NS" />
         <button id="add-btn">Add</button>
       </div>
-
+      <div style="margin-top:12px;color:var(--muted);font-size:13px">
+        Tip: Use exchange suffix like <b>.NS</b> for NSE (RELIANCE.NS). For intraday you can try Yahoo-format (NSE:RELIANCE) depending on your worker source.
+      </div>
     </aside>
 
     <main class="chart-area">
       <div id="toolbar">
-        <span id="symbol-title">Loading...</span>
+        <div id="symbol-title">Loading...</div>
+        <div id="live-price" style="color:var(--accent)"></div>
 
-        <div id="timeframes" class="tf-group">
-          <button class="tf-btn active" data-tf="1m">1m</button>
-          <button class="tf-btn" data-tf="5m">5m</button>
-          <button class="tf-btn" data-tf="15m">15m</button>
-          <button class="tf-btn" data-tf="30m">30m</button>
-          <button class="tf-btn" data-tf="60m">60m</button>
-          <button class="tf-btn" data-tf="1d">1D</button>
-          <button class="tf-btn" data-tf="1w">1W</button>
-          <button class="tf-btn" data-tf="1mo">1M</button>
+        <div style="flex:1"></div>
+
+        <div id="timeframes">
+          <!-- intraday + higher -->
+          <button class="tf-btn active" data-interval="1m" data-range="1d">1m</button>
+          <button class="tf-btn" data-interval="5m" data-range="5d">5m</button>
+          <button class="tf-btn" data-interval="15m" data-range="1mo">15m</button>
+          <button class="tf-btn" data-interval="30m" data-range="1mo">30m</button>
+          <button class="tf-btn" data-interval="60m" data-range="3mo">60m</button>
+          <button class="tf-btn" data-interval="1d" data-range="1y">1D</button>
+          <button class="tf-btn" data-interval="1wk" data-range="5y">1W</button>
+          <button class="tf-btn" data-interval="1mo" data-range="10y">1M</button>
         </div>
       </div>
 
@@ -47,11 +81,415 @@
         <div id="volume"></div>
 
         <div id="spinner">Loading...</div>
-        <div id="error" role="alert"></div>
+        <div id="error"></div>
       </div>
     </main>
   </div>
 
-  <script src="script.js"></script>
+  <script>
+  // -----------------------------
+  // CONFIG (PUT YOUR WORKER URL)
+  // -----------------------------
+  const WORKER_URL = "https://black-tree-2e32.sriviadithi.workers.dev/"; // <-- keep trailing slash
+  // poll interval for live intraday (ms)
+  const POLL_MS = 15000;
+
+  // HTML refs
+  const watchlistEl = document.getElementById("watchlist");
+  const addInput = document.getElementById("add-stock");
+  const addBtn = document.getElementById("add-btn");
+  const searchInput = document.getElementById("search");
+  const tfButtons = document.querySelectorAll(".tf-btn");
+  const symbolTitle = document.getElementById("symbol-title");
+  const livePriceEl = document.getElementById("live-price");
+  const spinner = document.getElementById("spinner");
+  const errorBox = document.getElementById("error");
+
+  // Chart DOMs
+  const chartDiv = document.getElementById("chart");
+  const volumeDiv = document.getElementById("volume");
+
+  // Chart objects
+  let chart = null;
+  let candleSeries = null;
+  let volumeSeries = null;
+
+  // Watchlist (localStorage key)
+  const LS_KEY = "trading_chakra_watchlist_v1";
+
+  // State
+  let watchlist = []; // array of symbols
+  let activeSymbol = null;
+  let activeInterval = "1m";
+  let activeRange = "1d";
+  let pollTimer = null;
+  let lastIntradayHasData = true;
+
+  // -----------------------------
+  // UTIL: load/save watchlist
+  // -----------------------------
+  function loadWatchlist() {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) {
+      try {
+        watchlist = JSON.parse(raw);
+      } catch (e) {
+        watchlist = ["RELIANCE.NS","TCS.NS","INFY.NS","HDFCBANK.NS","ICICIBANK.NS"];
+      }
+    } else {
+      watchlist = ["RELIANCE.NS","TCS.NS","INFY.NS","HDFCBANK.NS","ICICIBANK.NS"];
+    }
+  }
+  function saveWatchlist() {
+    localStorage.setItem(LS_KEY, JSON.stringify(watchlist));
+  }
+
+  // -----------------------------
+  // RENDER watchlist
+  // -----------------------------
+  function renderWatchlist() {
+    watchlistEl.innerHTML = "";
+    watchlist.forEach(sym => {
+      const li = document.createElement("li");
+      li.textContent = sym;
+      li.dataset.symbol = sym;
+
+      // delete button small
+      const del = document.createElement("button");
+      del.textContent = "×";
+      del.style.background = "transparent";
+      del.style.color = "#cfe6f6";
+      del.style.border = "none";
+      del.style.cursor = "pointer";
+      del.style.fontSize = "18px";
+      del.title = "Remove";
+      del.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        removeSymbol(sym);
+      });
+
+      li.appendChild(del);
+      li.addEventListener("click", () => selectSymbol(sym));
+      if (sym === activeSymbol) li.classList.add("active");
+      watchlistEl.appendChild(li);
+    });
+  }
+
+  // -----------------------------
+  // ADD / REMOVE symbol
+  // -----------------------------
+  function addSymbol(sym) {
+    if (!sym) return;
+    sym = sym.trim().toUpperCase();
+    if (watchlist.includes(sym)) { alert("Already in watchlist"); return; }
+    watchlist.unshift(sym);
+    saveWatchlist();
+    renderWatchlist();
+    addInput.value = "";
+    selectSymbol(sym);
+  }
+  function removeSymbol(sym) {
+    watchlist = watchlist.filter(s=>s!==sym);
+    saveWatchlist();
+    if (sym === activeSymbol) activeSymbol = null;
+    renderWatchlist();
+    if (!activeSymbol && watchlist.length) selectSymbol(watchlist[0]);
+  }
+
+  // -----------------------------
+  // Chart creation (single)
+  // -----------------------------
+  function createChart() {
+    if (chart) return;
+    chart = LightweightCharts.createChart(chartDiv, {
+      width: chartDiv.clientWidth,
+      height: chartDiv.clientHeight,
+      layout: { backgroundColor: "#0f1724", textColor: "#d1d4dc" },
+      grid: { vertLines:{color:"#253248"}, horzLines:{color:"#253248"} },
+      timeScale: { rightOffset: 12, borderColor:"#2b3b4a" },
+      rightPriceScale: { borderColor:"#2b3b4a" }
+    });
+
+    candleSeries = chart.addCandlestickSeries({
+      upColor: getComputedStyle(document.documentElement).getPropertyValue('--up') || "#22c55e",
+      downColor: getComputedStyle(document.documentElement).getPropertyValue('--down') || "#ef4444",
+      borderVisible: true,
+      wickVisible: true,
+      priceLineVisible: false,
+    });
+
+    // volume on a separate area (histogram)
+    volumeSeries = chart.addHistogramSeries({
+      priceFormat: { type: 'volume' },
+      priceScaleId: '',
+      scaleMargins: { top: 0.8, bottom: 0 },
+      lastValueVisible: false,
+    });
+
+    // handle resize
+    window.addEventListener("resize", () => {
+      chart.applyOptions({ width: chartDiv.clientWidth, height: chartDiv.clientHeight });
+    });
+  }
+
+  // -----------------------------
+  // Fetch data from worker
+  // Worker expected to accept query params:
+  //  ?symbol=SYMBOL&interval=1m&range=1d
+  // returns JSON array of items:
+  //  { time: 1660000000, open:..., high:..., low:..., close:..., volume:... }
+  // -----------------------------
+  async function fetchFromWorker(symbol, interval, range) {
+    try {
+      const url = new URL(WORKER_URL);
+      url.searchParams.set("symbol", symbol);
+      if (interval) url.searchParams.set("interval", interval);
+      if (range) url.searchParams.set("range", range);
+
+      const res = await fetch(url.toString(), { cache: "no-store" });
+      const text = await res.text();
+
+      // sometimes worker responds plain text or error page; try parse safely
+      try {
+        const json = JSON.parse(text);
+        // if it's an error object from worker
+        if (json && json.error) throw new Error(json.error || "worker error");
+      } catch (e) {
+        // if parse fails, attempt to parse array if text already is json array
+        // else throw
+      }
+
+      // now parse proper JSON
+      const data = JSON.parse(text);
+      if (!Array.isArray(data)) return [];
+      // normalize times to unix seconds if needed (if ms -> convert)
+      const normalized = data.map(item => {
+        const t = item.time;
+        // detect ms timestamps (>1e12) vs seconds
+        const time = (t > 1e12) ? Math.floor(t/1000) : t;
+        return {
+          time,
+          open: Number(item.open),
+          high: Number(item.high),
+          low: Number(item.low),
+          close: Number(item.close),
+          volume: Number(item.volume || 0)
+        };
+      });
+      return normalized;
+    } catch (err) {
+      console.error("fetchFromWorker error:", err);
+      return [];
+    }
+  }
+
+  // -----------------------------
+  // Helper: detect if intraday interval
+  // -----------------------------
+  function isIntraday(interval) {
+    return ["1m","5m","15m","30m","60m"].includes(interval);
+  }
+
+  // -----------------------------
+  // Load chart for symbol + interval
+  // Option B behavior:
+  //  - try intraday (interval/range)
+  //  - if no data (empty array) -> fallback to daily (1d) EOD
+  //  - when intraday active, start polling every POLL_MS for live update
+  // -----------------------------
+  async function loadChart(symbol, interval = activeInterval, range = activeRange) {
+    if (!symbol) return;
+    activeSymbol = symbol;
+    activeInterval = interval;
+    activeRange = range;
+
+    // UI updates
+    symbolTitle.textContent = symbol;
+    livePriceEl.textContent = "";
+
+    createChart();
+    spinner.style.display = "block";
+    errorBox.style.display = "none";
+    renderWatchlist();
+
+    // clear existing poll
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+
+    // try fetch
+    let data = await fetchFromWorker(symbol, interval, range);
+
+    // If intraday requested and no data -> fallback to daily (EOD)
+    if (isIntraday(interval) && (!data || data.length === 0)) {
+      console.warn("Intraday empty — switching to daily EOD fallback");
+      lastIntradayHasData = false;
+      interval = "1d";
+      range = "5y";
+      activeInterval = interval;
+      activeRange = range;
+      // update active tf buttons
+      setActiveTfButton("1d");
+      data = await fetchFromWorker(symbol, interval, range);
+    } else {
+      lastIntradayHasData = true;
+    }
+
+    if (!data || data.length === 0) {
+      spinner.style.display = "none";
+      showError("No chart data returned for " + symbol);
+      return;
+    }
+
+    // Build ohlc and volume arrays
+    const ohlc = data.map(d => ({ time: d.time, open: d.open, high: d.high, low: d.low, close: d.close }));
+    const volume = data.map(d => ({ time: d.time, value: d.volume || 0, color: (d.close >= d.open) ? 'rgba(34,197,94,0.9)' : 'rgba(239,68,68,0.9)' }));
+
+    // set data
+    candleSeries.setData(ohlc);
+    volumeSeries.setData(volume);
+    chart.timeScale().fitContent();
+
+    // show last price
+    const last = ohlc[ohlc.length - 1];
+    livePriceEl.textContent = last ? `Last: ${last.close}` : "";
+
+    spinner.style.display = "none";
+
+    // if intraday and we got data -> start polling for live updates
+    if (isIntraday(interval) && lastIntradayHasData !== false) {
+      // set up polling
+      pollTimer = setInterval(async () => {
+        try {
+          const newData = await fetchFromWorker(symbol, interval, range);
+          if (Array.isArray(newData) && newData.length) {
+            // replace whole series for simplicity (could do incremental update)
+            candleSeries.setData(newData.map(d => ({ time:d.time, open:d.open, high:d.high, low:d.low, close:d.close })));
+            volumeSeries.setData(newData.map(d => ({ time:d.time, value:d.volume || 0, color: (d.close>=d.open)?'rgba(34,197,94,0.9)':'rgba(239,68,68,0.9)' })));
+            const last2 = newData[newData.length-1];
+            if (last2) livePriceEl.textContent = `Last: ${last2.close}`;
+          } else {
+            // If empty intraday now, fallback next time
+            lastIntradayHasData = false;
+            clearInterval(pollTimer);
+            pollTimer = null;
+            loadChart(symbol, "1d", "5y");
+          }
+        } catch (err) {
+          console.error("Polling error:", err);
+        }
+      }, POLL_MS);
+    }
+  }
+
+  // -----------------------------
+  // UI helpers
+  // -----------------------------
+  function showError(msg) { errorBox.style.display = "block"; errorBox.textContent = msg; }
+  function hideError() { errorBox.style.display = "none"; }
+
+  function setActiveTfButton(tfIdentifier) {
+    tfButtons.forEach(btn => {
+      btn.classList.remove("active");
+      // map 1d variations
+      const intv = btn.dataset.interval || btn.getAttribute("data-interval");
+      if (!intv) return;
+      if ( (tfIdentifier.toLowerCase()==="1d" && intv==="1d") || (tfIdentifier === btn.dataset.interval) ) {
+        btn.classList.add("active");
+      }
+    });
+  }
+
+  // -----------------------------
+  // Select symbol
+  // -----------------------------
+  function selectSymbol(sym) {
+    // choose default interval based on current active btn
+    const activeBtn = document.querySelector(".tf-btn.active");
+    const interval = activeBtn?.dataset.interval || "1m";
+    const range = activeBtn?.dataset.range || "1d";
+    activeSymbol = sym;
+    renderWatchlist();
+    loadChart(sym, interval, range);
+  }
+
+  // -----------------------------
+  // Wire events
+  // -----------------------------
+  addBtn.addEventListener("click", () => {
+    const v = addInput.value.trim();
+    if (!v) return;
+    addSymbol(v);
+  });
+  addInput.addEventListener("keyup", (e) => { if (e.key === "Enter") addBtn.click(); });
+
+  // search filter
+  searchInput.addEventListener("input", () => {
+    const q = searchInput.value.trim().toLowerCase();
+    Array.from(watchlistEl.children).forEach(li => {
+      const sym = li.dataset.symbol.toLowerCase();
+      li.style.display = sym.includes(q) ? "" : "none";
+    });
+  });
+
+  // timeframe buttons
+  tfButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      tfButtons.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      const interval = btn.dataset.interval;
+      const range = btn.dataset.range;
+      activeInterval = interval;
+      activeRange = range;
+      if (activeSymbol) loadChart(activeSymbol, interval, range);
+    });
+  });
+
+  // -----------------------------
+  // Placeholder: custom indicators integration hook
+  // -----------------------------
+  // When you provide PineScript indicators, I will convert them into JS routines that
+  // compute indicator lines from the series and then call:
+  //   candleSeries.applyOptions(...) or chart.addLineSeries(...) etc.
+  //
+  // Example function you can call:
+  function applyCustomIndicator(indicatorName, computeFn) {
+    // computeFn expects array of OHLC objects and returns array of {time, value}
+    // Example usage (after data loaded): const lines = computeFn(ohlc); add series
+    try {
+      // simple example: add line series
+      const line = chart.addLineSeries({ color: "#f4d35e", lineWidth: 1 });
+      // compute based on current displayed data:
+      const raw = candleSeries.getData(); // may return visible data (api dependent)
+      const points = computeFn(raw || []);
+      line.setData(points || []);
+      return line;
+    } catch (e) { console.error("applyCustomIndicator error", e); }
+  }
+
+  // -----------------------------
+  // Init
+  // -----------------------------
+  (function init() {
+    loadWatchlist();
+    createChart();
+    renderWatchlist();
+
+    // pick first symbol
+    const initial = watchlist.length ? watchlist[0] : null;
+    if (initial) {
+      selectSymbol(initial);
+    } else {
+      symbolTitle.textContent = "No symbols — add one";
+    }
+
+    // make sure chart resizes when container changes (simple)
+    const resizeObserver = new ResizeObserver(() => {
+      if (chart) chart.applyOptions({ width: chartDiv.clientWidth, height: chartDiv.clientHeight });
+    });
+    resizeObserver.observe(chartDiv);
+  })();
+
+  // expose for debugging (optional)
+  window.TradingChakra = { loadChart, addSymbol, removeSymbol, applyCustomIndicator, fetchFromWorker };
+  </script>
 </body>
 </html>
