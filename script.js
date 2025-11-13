@@ -1,33 +1,43 @@
+// Load TradingView chart with a delay so the container is ready
 function loadChart(symbol) {
-  document.getElementById("chart-container").innerHTML = "";
+  const container = document.getElementById("chart-container");
+  container.innerHTML = ""; // Clear old chart
 
-  new TradingView.widget({
-    autosize: true,
-    symbol: symbol,
-    interval: "D",
-    range: "5Y",
-    timezone: "Asia/Kolkata",
-    theme: "dark",
-    style: "1",
-    locale: "en",
-    enable_publishing: false,
-    container_id: "chart-container"
-  });
+  // Delay ensures GitHub Pages fully renders the container before TradingView loads
+  setTimeout(() => {
+    new TradingView.widget({
+      width: "100%",
+      height: "100%",
+      symbol: symbol,
+      interval: "D",
+      range: "5Y",
+      timezone: "Asia/Kolkata",
+      theme: "dark",
+      style: "1",
+      locale: "en",
+      enable_publishing: false,
+      hide_side_toolbar: false,
+      withdateranges: true,
+      container_id: "chart-container"
+    });
+  }, 300); // 300ms = perfect for GitHub Pages
 }
 
-// Default chart
+// Load default chart when site opens
 loadChart("RELIANCE.NS");
 
-// Click on watchlist
+// When you click any stock in the watchlist → update chart
 document.querySelectorAll("#watchlist li").forEach(item => {
   item.addEventListener("click", () => {
-    loadChart(item.dataset.symbol);
+    const symbol = item.dataset.symbol;
+    loadChart(symbol);
   });
 });
 
-// Search filter
-document.getElementById("search").addEventListener("input", e => {
-  let value = e.target.value.toUpperCase();
+// Search bar filter
+document.getElementById("search").addEventListener("input", (e) => {
+  const value = e.target.value.toUpperCase();
+
   document.querySelectorAll("#watchlist li").forEach(li => {
     li.style.display = li.textContent.toUpperCase().includes(value)
       ? ""
