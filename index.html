@@ -7,15 +7,18 @@
 
   <link rel="stylesheet" href="style.css" />
 
-  <!-- Load Lightweight Charts (WORKING CDN) -->
+  <!-- Lightweight Charts -->
   <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.1/dist/lightweight-charts.standalone.production.js"></script>
 </head>
 
 <body>
   <div id="app">
+
+    <!-- Sidebar -->
     <aside class="sidebar">
-      <h2>Watchlist</h2>
+      <h1>Watchlist</h1>
       <input id="search" type="text" placeholder="Search stock...">
+
       <ul id="watchlist">
         <li data-symbol="RELIANCE.NS">RELIANCE</li>
         <li data-symbol="TCS.NS">TCS</li>
@@ -25,8 +28,21 @@
       </ul>
     </aside>
 
+    <!-- Chart Area -->
     <main class="chart-area">
-      <div id="chart-container"></div>
+
+      <div id="toolbar">
+        <span id="symbol-title">RELIANCE.NS</span>
+      </div>
+
+      <div id="chart-wrapper">
+        <div id="chart"></div>
+        <div id="volume"></div>
+
+        <div id="spinner">Loading...</div>
+        <div id="error"></div>
+      </div>
+
     </main>
   </div>
 
