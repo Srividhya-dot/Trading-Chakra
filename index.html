@@ -1,656 +1,789 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Trading Chakra — Charts + Indicators</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Chart + Watchlist (Compact Dashboard)</title>
 
-  <!-- Lightweight Charts CDN (stable) -->
-  <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.1/dist/lightweight-charts.standalone.production.js"></script>
+<!-- Lightweight Charts CDN -->
+<script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
 
-  <style>
-  :root{
-    --bg: #0b1220;
-    --panel: #0f2233;
-    --muted: #94a3b8;
-    --accent: #38bdf8;
-    --up: #22c55e;
-    --down: #ef4444;
-    --surface: #0f1724;
-  }
-  html,body{height:100%;margin:0;background:var(--bg);font-family:Inter,Arial,sans-serif;color:#e6eef8}
-  #app{display:grid;grid-template-columns:300px 1fr;height:100vh}
-  .sidebar{padding:18px;background:#071523;box-sizing:border-box;border-right:1px solid rgba(255,255,255,0.03);overflow:auto}
-  .sidebar h1{margin:0 0 12px 0;color:var(--accent);font-size:34px}
-  #search{width:100%;padding:12px;border-radius:8px;border:none;outline:none;margin-bottom:14px;background:#081021;color:#e6eef8;box-sizing:border-box}
-  #watchlist{list-style:none;padding:0;margin:0}
-  #watchlist li{background:#122635;margin:8px 0;padding:18px;border-radius:8px;cursor:pointer;color:#e6eef8;text-transform:uppercase;letter-spacing:0.8px;transition:background .15s}
-  #watchlist li:hover{background:#183349}
-  #watchlist li.active{background:#254a63}
-  .add-stock { display:flex; gap:8px; margin-top:10px; align-items:center }
-  .add-stock input{flex:1;padding:10px;border-radius:8px;border:none;background:#06101a;color:#cfe6ff}
-  .btn {background:var(--accent); border:none;color:#003047;padding:10px 14px;border-radius:8px;cursor:pointer}
-  .btn.secondary {background:transparent;border:1px solid rgba(255,255,255,0.06);color:#bcd3ea}
-  .panel {margin-top:18px;background:#071824;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.02)}
-  .panel h3{margin:0 0 10px 0;color:#bfe7ff}
-  .field{margin-bottom:10px}
-  .field label{display:block;color:var(--muted);font-size:13px;margin-bottom:6px}
-  .field input[type="text"], .field input[type="number"]{width:100%;padding:8px;border-radius:6px;border:none;background:#07161d;color:#dfefff}
-  .timeframes{display:flex;gap:8px;align-items:center}
-  .tf-btn{background:#0a1a25;border:none;color:#bcd3ea;padding:8px 12px;border-radius:8px;cursor:pointer}
-  .tf-btn.active{background:var(--accent);color:#002b38}
-  .chart-area{display:flex;flex-direction:column;background:var(--surface);height:100%}
-  #toolbar{height:56px;display:flex;align-items:center;padding:0 18px;border-bottom:1px solid rgba(255,255,255,0.03);gap:12px}
-  #symbol-title{font-weight:700;color:#e6eef8;font-size:18px}
-  #chart-container{flex:1;min-height:0;position:relative}
-  #spinner{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.6);padding:12px 18px;border-radius:8px;font-weight:700;display:none}
-  #error{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:#2b0f0f;color:#ffd2d2;padding:12px 16px;border-radius:8px;max-width:80%;text-align:center;display:none}
-  .legend { margin-left:auto; color:var(--muted); font-size:13px }
-  .preset-list{margin-top:8px}
-  .preset-item{padding:8px;border-radius:6px;background:rgba(255,255,255,0.02);margin:6px 0;display:flex;justify-content:space-between;align-items:center}
-  .controls-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-  .small{font-size:13px;padding:8px;border-radius:6px}
-  @media (max-width:900px){ #app{grid-template-columns:1fr} .sidebar{height:200px;overflow:auto} }
-  </style>
+<style>
+:root{
+  --bg:#071122; --panel:#0b2230; --muted:#94a3b8; --accent:#38bdf8;
+  --up:#22c55e; --down:#ef4444; --surface:#0f1724;
+  --card:#0f2a37;
+}
+*{box-sizing:border-box;font-family:Inter, Arial, sans-serif}
+html,body{height:100%;margin:0;background:var(--bg);color:#e6eef8}
+.app{display:flex;height:100vh;overflow:hidden}
+
+/* Left watchlist (collapsible) */
+.side{
+  width:320px;
+  background:linear-gradient(180deg,#071a27 0,#071a27 100%);
+  padding:18px;
+  border-right:1px solid rgba(255,255,255,0.03);
+  overflow:auto;
+}
+.side h2{margin:0 0 12px;color:var(--accent);font-size:30px}
+.input, .btn{border-radius:8px;border:none;padding:10px}
+.search{width:100%;background:#071826;color:#cfe6ff;padding:10px;margin-bottom:12px}
+.watchlist{list-style:none;padding:0;margin:0}
+.watchlist li{
+  background:#122b36;margin:10px 0;padding:16px;border-radius:8px;cursor:pointer;
+  text-transform:uppercase;letter-spacing:0.6px;color:#e6eef8;font-weight:600
+}
+.watchlist li.active{background:#244f63}
+.add-row{display:flex;gap:8px;margin-top:12px}
+.add-row input{flex:1;background:#071026;padding:10px;color:#cfe6ff}
+.add-row button{background:var(--accent);color:#042330;padding:10px 14px;cursor:pointer}
+
+/* Preset and controls */
+.panel{
+  margin-top:20px;background:rgba(255,255,255,0.02);padding:12px;border-radius:8px
+}
+.panel h3{margin:0 0 8px;font-size:16px}
+.preset-row{display:flex;gap:8px;align-items:center}
+.small{font-size:13px;color:var(--muted)}
+.preset-list{margin-top:8px;font-size:13px}
+
+/* Main chart area */
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.toolbar{height:64px;background:linear-gradient(90deg,rgba(0,0,0,0.3),rgba(0,0,0,0.05));display:flex;align-items:center;padding:0 18px;border-bottom:1px solid rgba(255,255,255,0.03);gap:16px}
+.title{font-weight:700;font-size:20px}
+.tf-group{display:flex;gap:8px;margin-left:8px}
+.tf-btn{background:rgba(255,255,255,0.03);border-radius:8px;padding:8px 12px;border:none;color:#cfe6ff;cursor:pointer}
+.tf-btn.active{background:var(--accent);color:#01222b}
+
+/* top-right toggles */
+.toggles{margin-left:auto;display:flex;gap:12px;align-items:center}
+.toggle{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--muted)}
+
+/* chart container */
+.chart-wrap{flex:1;display:flex;min-height:0;position:relative}
+.chart-box{flex:1;background:var(--surface);padding:12px;display:flex;flex-direction:column;min-height:0}
+#chart{flex:1;min-height:0;border-radius:6px}
+
+/* right indicator panel */
+.right{
+  width:360px;background:linear-gradient(180deg,#06151e,#071a24);padding:18px;border-left:1px solid rgba(255,255,255,0.03);overflow:auto
+}
+.right h3{color:var(--accent);margin:0 0 12px}
+.ctrl{margin-bottom:12px}
+.ctrl label{display:block;color:var(--muted);font-size:13px;margin-bottom:6px}
+.ctrl input[type="number"], .ctrl input[type="text"], .ctrl select{width:100%;padding:8px;border-radius:6px;border:none;background:#071827;color:#cfe6ff}
+
+/* error & spinner */
+.spinner, .error{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.7);padding:12px 18px;border-radius:10px;font-weight:700
+}
+.error{background:#2b0f0f;color:#ffd2d2;display:none}
+.hidden{display:none}
+
+/* responsive */
+@media (max-width:1000px){
+  .side{display:none}
+  .right{display:none}
+}
+</style>
 </head>
 <body>
-  <div id="app">
-    <aside class="sidebar">
-      <h1>Watchlist</h1>
-      <input id="search" placeholder="Search stock..." />
 
-      <ul id="watchlist"></ul>
+<div class="app">
+  <!-- LEFT WATCHLIST / PRESETS -->
+  <aside class="side" id="leftPanel">
+    <h2>Watchlist</h2>
+    <input id="searchInput" class="search" placeholder="Search symbol..." />
+    <ul id="watchlist" class="watchlist">
+      <!-- items injected -->
+    </ul>
 
-      <div class="add-stock">
-        <input id="add-symbol" placeholder="Add symbol, e.g. RELIANCE.NS" />
-        <button id="add-btn" class="btn">Add</button>
+    <div class="add-row">
+      <input id="addSymbol" placeholder="Add symbol, e.g. RELIANCE.NS" />
+      <button id="addBtn">Add</button>
+    </div>
+
+    <div class="panel">
+      <h3>Presets</h3>
+      <div class="preset-row">
+        <input id="presetName" placeholder="Give preset a name" />
+        <button id="savePreset" style="background:var(--accent);padding:8px 14px;border-radius:8px;color:#01222b">Save</button>
+      </div>
+      <div style="margin-top:8px"><button id="exportPresets" style="background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,0.03);padding:8px;border-radius:8px">Export</button></div>
+      <div class="preset-list" id="presetList">Saved presets:</div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="toolbar">
+      <div class="title" id="symbolTitle">Loading...</div>
+      <div class="tf-group" id="timeframes">
+        <!-- timeframe buttons -->
+        <button class="tf-btn" data-tf="1m">1m</button>
+        <button class="tf-btn" data-tf="5m">5m</button>
+        <button class="tf-btn" data-tf="15m">15m</button>
+        <button class="tf-btn" data-tf="30m">30m</button>
+        <button class="tf-btn" data-tf="60m">60m</button>
+        <button class="tf-btn active" data-tf="1D">1D</button>
+        <button class="tf-btn" data-tf="1W">1W</button>
+        <button class="tf-btn" data-tf="1M">1M</button>
       </div>
 
-      <div class="panel">
-        <h3>Presets</h3>
-        <div class="field">
-          <input id="preset-name" type="text" placeholder="Give preset a name" />
-        </div>
-        <div style="display:flex;gap:8px">
-          <button id="save-preset" class="btn">Save Preset</button>
-          <button id="export-preset" class="btn secondary">Export</button>
-        </div>
-        <div class="preset-list" id="preset-list"></div>
+      <div class="toggles">
+        <div class="toggle"><input type="checkbox" id="toggleReliable" checked/> Reliable</div>
+        <div class="toggle"><input type="checkbox" id="toggleLux" checked/> Lux</div>
+        <div class="toggle"><input type="checkbox" id="toggleIsland" checked/> Island</div>
       </div>
+    </div>
 
-      <div class="panel" style="margin-top:12px">
-        <h3>Indicator Controls</h3>
-        <div style="margin-bottom:8px"><label><input id="toggle-reliable" type="checkbox" checked/> Reliable S/R</label></div>
-        <div class="controls-grid">
-          <div class="field">
-            <label>Pivot Left</label>
-            <input id="pivot-left" type="number" value="15" />
-          </div>
-          <div class="field">
-            <label>Pivot Right</label>
-            <input id="pivot-right" type="number" value="15" />
-          </div>
-        </div>
-
-        <div style="height:10px"></div>
-        <div style="margin-bottom:8px"><label><input id="toggle-lux" type="checkbox" checked/> LuxAlgo S/R</label></div>
-        <div class="controls-grid">
-          <div class="field">
-            <label>Lux len1</label>
-            <input id="lux-len1" type="number" value="50" />
-          </div>
-          <div class="field">
-            <label>Lux mlt1</label>
-            <input id="lux-mlt1" type="number" value="2" step="0.1" />
-          </div>
-        </div>
-
-        <div style="height:10px"></div>
-        <div style="margin-bottom:8px"><label><input id="toggle-island" type="checkbox" checked/> Island Reversal</label></div>
-        <div class="field">
-          <label>Island gap threshold (fraction of ATR)</label>
-          <input id="island-gap-mult" type="number" value="1.5" step="0.1" />
-        </div>
+    <div class="chart-wrap">
+      <div class="chart-box">
+        <div id="chart"></div>
+        <div id="spinner" class="spinner">Loading...</div>
+        <div id="error" class="error"></div>
       </div>
-    </aside>
+    </div>
+  </main>
 
-    <main class="chart-area">
-      <div id="toolbar">
-        <div id="symbol-title">Loading...</div>
+  <!-- RIGHT indicators & controls -->
+  <aside class="right">
+    <h3>Indicator Controls</h3>
 
-        <div id="timeframes" class="timeframes" style="margin-left:12px">
-          <button class="tf-btn" data-tf="1m">1m</button>
-          <button class="tf-btn" data-tf="5m">5m</button>
-          <button class="tf-btn" data-tf="15m">15m</button>
-          <button class="tf-btn" data-tf="30m">30m</button>
-          <button class="tf-btn" data-tf="60m">60m</button>
-          <button class="tf-btn active" data-tf="1D">1D</button>
-          <button class="tf-btn" data-tf="1W">1W</button>
-          <button class="tf-btn" data-tf="1M">1M</button>
-        </div>
+    <div class="ctrl">
+      <label><input type="checkbox" id="showVolume" checked/> Show volume</label>
+    </div>
 
-        <div class="legend">
-          <span id="live-price">—</span>
-        </div>
-      </div>
+    <div class="ctrl">
+      <label>Reliable S/R: Pivot left</label>
+      <input id="pivotLeft" type="number" min="1" value="15" />
+      <label style="margin-top:8px">Pivot right</label>
+      <input id="pivotRight" type="number" min="1" value="15" />
+    </div>
 
-      <div id="chart-container">
-        <div id="spinner">Loading...</div>
-        <div id="error">Error</div>
-        <div id="chart" style="width:100%;height:calc(100vh - 56px)"></div>
-        <div id="volume" style="height:110px"></div>
-      </div>
-    </main>
-  </div>
+    <div class="ctrl">
+      <label>LuxAlgo S/R (len1, mlt1)</label>
+      <input id="luxLen1" type="number" min="2" value="50" />
+      <input id="luxMlt1" type="number" min="0.1" step="0.1" value="2" />
+    </div>
+
+    <div class="ctrl">
+      <label>Island Reversal: Trend length</label>
+      <input id="islandTrend" type="number" min="2" value="10" />
+      <label style="margin-top:8px"><input type="checkbox" id="islandVolFilter" checked/> Volume filter</label>
+    </div>
+
+    <div style="margin-top:10px">
+      <button id="applyIndicators" style="background:var(--accent);color:#01222b;padding:10px;border-radius:8px;border:none">Apply</button>
+    </div>
+
+    <hr style="margin:14px 0;border:none;border-top:1px solid rgba(255,255,255,0.03)">
+
+    <div class="small">Live update interval (sec)</div>
+    <input id="pollInterval" type="number" min="2" value="5" style="width:100%;padding:10px;border-radius:8px;background:#071827;margin-top:8px"/>
+
+    <div style="margin-top:14px" class="small">Notes:</div>
+    <div class="small" style="color:var(--muted);margin-top:6px">
+      Live updates poll your data endpoint during trading hours. After market close the chart is displayed as EOD.
+    </div>
+  </aside>
+</div>
 
 <script>
-/* ============================
-   Full app JS — single-file
-   ============================ */
+/*
+  Complete single-file app.
+  - Replace WORKER_URL with your own data worker if needed.
+  - This app expects worker to return array of {time,open,high,low,close,volume} in epoch seconds for daily (or specified).
+  - If you have alternate endpoints, adjust fetchOHLC function.
+*/
 
-/* ---------------------------
-   CONFIG - adjust if needed
-   --------------------------- */
-const WORKER_URL = "https://black-tree-2e32.sriviadithi.workers.dev/?symbol="; // <<-- your worker - keep as is
-const LIVE_POLL_MS = 5000; // poll for last price (ms)
+/* ---------------- CONFIG ---------------- */
+const WORKER_URL = "https://black-tree-2e32.sriviadithi.workers.dev/?symbol="; // default worker
+const DEFAULT_SYMBOLS = ["RELIANCE.NS","TCS.NS","INFY.NS","HDFCBANK.NS","ICICIBANK.NS"];
 
-/* ---------------------------
-   DOM refs
-   --------------------------- */
+/* DOM */
 const watchlistEl = document.getElementById('watchlist');
-const addSymbolInput = document.getElementById('add-symbol');
-const addBtn = document.getElementById('add-btn');
+const symbolTitle = document.getElementById('symbolTitle');
+const chartDiv = document.getElementById('chart');
 const spinner = document.getElementById('spinner');
 const errorBox = document.getElementById('error');
-const symbolTitle = document.getElementById('symbol-title');
-const livePriceEl = document.getElementById('live-price');
-const tfButtons = document.querySelectorAll('.tf-btn');
 
-const presetNameInput = document.getElementById('preset-name');
-const savePresetBtn = document.getElementById('save-preset');
-const exportPresetBtn = document.getElementById('export-preset');
-const presetListEl = document.getElementById('preset-list');
+const addSymbolInput = document.getElementById('addSymbol');
+const addBtn = document.getElementById('addBtn');
+const searchInput = document.getElementById('searchInput');
 
-const toggleReliable = document.getElementById('toggle-reliable');
-const pivotLeftInput = document.getElementById('pivot-left');
-const pivotRightInput = document.getElementById('pivot-right');
+const tfButtons = Array.from(document.querySelectorAll('.tf-btn'));
+const showVolume = document.getElementById('showVolume');
 
-const toggleLux = document.getElementById('toggle-lux');
-const luxLen1 = document.getElementById('lux-len1');
-const luxMlt1 = document.getElementById('lux-mlt1');
+const toggleReliable = document.getElementById('toggleReliable');
+const toggleLux = document.getElementById('toggleLux');
+const toggleIsland = document.getElementById('toggleIsland');
 
-const toggleIsland = document.getElementById('toggle-island');
-const islandGapMult = document.getElementById('island-gap-mult');
+const pivotLeft = document.getElementById('pivotLeft');
+const pivotRight = document.getElementById('pivotRight');
 
-/* ---------------------------
-   State
-   --------------------------- */
-let watchlist = loadWatchlist();
-let currentSymbol = watchlist.length ? watchlist[0] : null;
-let currentTf = '1D';
-let chart = null, candleSeries = null, volumeSeries = null;
-let priceLine = null;
-let indicatorLines = []; // keep references to created price lines / markers so we can clear
-let liveTimer = null;
+const luxLen1 = document.getElementById('luxLen1');
+const luxMlt1 = document.getElementById('luxMlt1');
 
-/* ---------------------------
-   Utility helpers
-   --------------------------- */
-function saveWatchlist() { localStorage.setItem('tc_watchlist', JSON.stringify(watchlist)); }
-function loadWatchlist() { try { return JSON.parse(localStorage.getItem('tc_watchlist')) || ['RELIANCE.NS','TCS.NS','INFY.NS','HDFCBANK.NS','ICICIBANK.NS']; } catch(e){ return ['RELIANCE.NS']; } }
-function showSpinner(){ spinner.style.display='block'; }
-function hideSpinner(){ spinner.style.display='none'; }
-function showError(msg){ errorBox.innerText = msg; errorBox.style.display='block'; }
-function hideError(){ errorBox.style.display='none'; }
+const islandTrend = document.getElementById('islandTrend');
+const islandVolFilter = document.getElementById('islandVolFilter');
 
-/* convert worker time to chart time (lightweight-charts expects unix seconds) */
-function toChartTime(t){
-  // if t looks like ms ( > 1e12 ), convert to seconds
-  if (t > 1e12) return Math.floor(t/1000);
-  return t;
-}
+const applyIndicatorsBtn = document.getElementById('applyIndicators');
+const pollIntervalInput = document.getElementById('pollInterval');
 
-/* create and render watchlist UI */
-function renderWatchlist(){
-  watchlistEl.innerHTML='';
-  watchlist.forEach(sym => {
-    const li = document.createElement('li');
-    li.innerText = sym;
-    li.dataset.symbol = sym;
-    li.addEventListener('click', () => {
-      loadChart(sym);
-    });
-    watchlistEl.appendChild(li);
+const presetName = document.getElementById('presetName');
+const savePresetBtn = document.getElementById('savePreset');
+const presetList = document.getElementById('presetList');
+const exportPresetsBtn = document.getElementById('exportPresets');
+
+let watchSymbols = JSON.parse(localStorage.getItem('watchSymbols')) || DEFAULT_SYMBOLS.slice();
+let presets = JSON.parse(localStorage.getItem('chartPresets')) || {};
+
+/* ---------------- CHART SETUP ---------------- */
+let chart = null;
+let candleSeries = null;
+let volumeSeries = null;
+let srLines = []; // store lines for indicators
+let lastSymbol = null;
+let activeTF = '1D';
+let pollTimer = null;
+
+function createChart(){
+  if(chart) return;
+
+  chart = LightweightCharts.createChart(chartDiv, {
+    layout: { backgroundColor: "#0f1724", textColor: "#d1d4dc" },
+    rightPriceScale: { borderColor: "#485c7b" },
+    timeScale: { borderColor: "#485c7b", timeVisible: true, secondsVisible: false },
+    grid: { vertLines: {color:'#253248'}, horzLines:{color:'#253248'} }
+  });
+
+  candleSeries = chart.addCandlestickSeries({
+    upColor: "#22c55e", downColor: "#ef4444", borderVisible:true, wickVisible:true
+  });
+
+  volumeSeries = chart.addHistogramSeries({
+    priceFormat: { type: 'volume' },
+    priceScaleId: '',
+    scaleMargins: { top: 0.8, bottom: 0 },
   });
 }
 
-/* mark active */
-function markActiveSymbol(sym){
-  document.querySelectorAll('#watchlist li').forEach(li => li.classList.toggle('active', li.dataset.symbol === sym));
+/* --------------- UI helpers --------------- */
+function showSpinner(){ spinner.classList.remove('hidden'); }
+function hideSpinner(){ spinner.classList.add('hidden'); }
+function showError(msg){ errorBox.style.display='block'; errorBox.textContent = msg; }
+function hideError(){ errorBox.style.display='none'; }
+
+/* populate watchlist */
+function renderWatchlist(){
+  watchlistEl.innerHTML = '';
+  for(let sym of watchSymbols){
+    const li = document.createElement('li');
+    li.textContent = sym;
+    li.dataset.symbol = sym;
+    li.addEventListener('click', ()=> loadChart(sym));
+    watchlistEl.appendChild(li);
+  }
+  attachActiveToList(lastSymbol);
+}
+function attachActiveToList(sym){
+  Array.from(watchlistEl.children).forEach(li=>{
+    li.classList.toggle('active', li.dataset.symbol === sym);
+  });
 }
 
-/* Add symbol */
-addBtn.addEventListener('click', () => {
-  const s = addSymbolInput.value.trim();
-  if(!s) return;
-  if (!watchlist.includes(s)){
-    watchlist.unshift(s.toUpperCase());
-    saveWatchlist();
-    renderWatchlist();
-  }
+/* Add/remove watchlist */
+addBtn.addEventListener('click', ()=>{
+  const v = (addSymbolInput.value || '').trim().toUpperCase();
+  if(!v) return;
+  if(!watchSymbols.includes(v)){ watchSymbols.unshift(v); localStorage.setItem('watchSymbols', JSON.stringify(watchSymbols)); renderWatchlist(); }
   addSymbolInput.value='';
-  loadChart(s.toUpperCase());
+  loadChart(v);
+});
+searchInput.addEventListener('input', e=>{
+  const q = e.target.value.trim().toLowerCase();
+  Array.from(watchlistEl.children).forEach(li=>{
+    li.style.display = q && !li.textContent.toLowerCase().includes(q) ? 'none' : '';
+  });
 });
 
 /* timeframes */
-tfButtons.forEach(btn => {
-  btn.addEventListener('click', () => {
+tfButtons.forEach(btn=>{
+  btn.addEventListener('click', ()=>{
     tfButtons.forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
-    currentTf = btn.dataset.tf;
-    if(currentSymbol) loadChart(currentSymbol);
+    activeTF = btn.dataset.tf;
+    if(lastSymbol) loadChart(lastSymbol);
   });
 });
 
-/* ---------------------------
-   Chart creation
-   --------------------------- */
-function createChartIfNeeded(){
-  if (chart) return;
-  const chartDiv = document.getElementById('chart');
-  chart = LightweightCharts.createChart(chartDiv, {
-    layout: { backgroundColor: "#ffffff", textColor: "#000000" },
-    width: chartDiv.clientWidth,
-    height: chartDiv.clientHeight - 0,
-    rightPriceScale: { borderColor: '#d0d7df' },
-    timeScale: { borderColor: '#d0d7df' },
-    grid: { vertLines: { color: '#e7ebef' }, horzLines: { color: '#e7ebef' } }
-  });
-  candleSeries = chart.addCandlestickSeries({
-    upColor: "#26a69a", downColor: "#ef5350", borderVisible: true, wickVisible:true
-  });
-  volumeSeries = chart.addHistogramSeries({
-    priceFormat: { type: 'volume' }, color: '#4c78ff', priceScaleId: '', scaleMargins: { top: 0.8, bottom: 0 }
-  });
-  window.addEventListener('resize', () => {
-    chart.applyOptions({
-      width: chartDiv.clientWidth,
-      height: chartDiv.clientHeight
-    });
-  });
-}
-
-/* ---------------------------
-   Fetch data from worker
-   - expects an array of { time, open, high, low, close, volume }
-   - time should be unix seconds (or ms - converted)
-   --------------------------- */
-async function fetchOHLC(symbol, tf){
-  // adapt tf param to your worker parameter format; we'll add &tf=...
-  const url = WORKER_URL + encodeURIComponent(symbol) + '&tf=' + encodeURIComponent(tf);
-  const resp = await fetch(url);
-  if (!resp.ok) throw new Error('HTTP ' + resp.status);
-  const data = await resp.json();
-  if (!Array.isArray(data)) throw new Error('Invalid data format');
-  // map to chart format
-  const mapped = data.map(row => ({
-    time: toChartTime(row.time),
-    open: +row.open,
-    high: +row.high,
-    low: +row.low,
-    close: +row.close,
-    volume: row.volume !== undefined ? +row.volume : 0
-  }));
-  return mapped;
-}
-
-/* update live price (polling) */
-async function pollLivePrice(symbol){
-  try {
-    const url = WORKER_URL + encodeURIComponent(symbol) + '&tf=' + encodeURIComponent('1m') + '&latest=1';
-    const resp = await fetch(url);
-    if (!resp.ok) return;
-    const data = await resp.json();
-    if (!Array.isArray(data) || data.length === 0) return;
-    const last = data[data.length-1];
-    const price = Number(last.close);
-    livePriceEl.innerText = price ? price.toFixed(2) : '—';
-    // optionally, update a single price line on chart
-    if (candleSeries && priceLine){
-      priceLine.applyOptions({ price: price });
-    } else if (candleSeries && !priceLine){
-      priceLine = candleSeries.createPriceLine({price: price, color: '#38bdf8', lineWidth:1, lineStyle:0, axisLabelVisible:true, title: 'Last'});
-    }
-  } catch(e){
-    // fail silently
-    console.warn('live poll error', e);
-  }
-}
-
-/* ---------------------------
-   Indicator helpers (approx conversion of Pine ideas)
-   - Reliable S/R: pivot-based horizontal lines
-   - Lux-style: sma-based lines + multiplier (upper/lower)
-   - Island reversal: detect isolated gap + small range, draw box
-   --------------------------- */
-
-function sma(arr, len){
-  if (len <= 0) return [];
-  const out = [];
-  for(let i=0;i<arr.length;i++){
-    if (i < len-1) { out.push(null); continue; }
-    let sum = 0;
-    for(let j=0;j<len;j++) sum += arr[i-j].close;
-    out.push(sum / len);
-  }
-  return out;
-}
-
-function detectPivots(data, left=15, right=15){
-  // returns arrays of pivot highs/lows as values (time, value)
-  const highs = [], lows = [];
-  for(let i=left;i<data.length-right;i++){
-    let isHigh = true, isLow = true;
-    for(let j=1;j<=left;j++){ if (data[i].high <= data[i-j].high) isHigh=false; if (data[i].low >= data[i-j].low) isLow=false; }
-    for(let j=1;j<=right;j++){ if (data[i].high <= data[i+j].high) isHigh=false; if (data[i].low >= data[i+j].low) isLow=false; }
-    if (isHigh) highs.push({i:i, time:data[i].time, value:data[i].high});
-    if (isLow) lows.push({i:i, time:data[i].time, value:data[i].low});
-  }
-  return {highs, lows};
-}
-
-function computeLuxSR(data, len, mlt){
-  // simple Bollinger upper/lower using sma & stddev
-  const res = [];
-  for(let i=0;i<data.length;i++){
-    if (i < len-1) { res.push(null); continue; }
-    let sum=0;
-    for(let j=0;j<len;j++) sum += data[i-j].close;
-    const avg = sum/len;
-    let v=0;
-    for(let j=0;j<len;j++){ const d = data[i-j].close - avg; v += d*d; }
-    const sd = Math.sqrt(v/len);
-    res.push({upper: avg + sd*mlt, lower: avg - sd*mlt, mid: avg});
-  }
-  return res;
-}
-
-function detectIslandReversals(data, gapMult=1.5){
-  // very simplified:
-  // if open today-gap compared to prev close > ATR*gapMult and it remains an isolated gap (i.e., next few bars do not overlap)
-  const out = [];
-  // compute ATR(14)
-  const atrLen = 14;
-  const trs = [];
-  for(let i=1;i<data.length;i++){
-    const tr = Math.max(data[i].high - data[i].low, Math.abs(data[i].high - data[i-1].close), Math.abs(data[i].low - data[i-1].close));
-    trs.push(tr);
-  }
-  function avg(arr){ if(!arr.length) return 0; return arr.reduce((a,b)=>a+b,0)/arr.length; }
-  const atr = avg(trs.slice(-atrLen));
-  for(let i=1;i<data.length-1;i++){
-    const prevClose = data[i-1].close;
-    const open = data[i].open;
-    const gap = Math.abs(open - prevClose);
-    if (gap > (atr * gapMult)){
-      // check isolation: following bar does not fill gap immediately
-      const next = data[i+1];
-      if (next && ((open > prevClose && next.low > prevClose) || (open < prevClose && next.high < prevClose))){
-        // mark box covering from high to low across i..i+1.. maybe a few bars
-        let top = Math.max(data[i].high, next.high);
-        let bottom = Math.min(data[i].low, next.low);
-        out.push({startTime:data[i].time, endTime:data[i+1].time, top, bottom});
-      }
-    }
-  }
-  return out;
-}
-
-/* clear previously created indicator lines / price lines */
-function clearIndicatorLines(){
-  // price lines created on candleSeries via createPriceLine
-  if (!candleSeries) return;
-  indicatorLines.forEach(item => {
-    try{
-      if (item.priceLine) candleSeries.removePriceLine(item.priceLine);
-      if (item.volSeries) volumeSeries.removePriceLine && volumeSeries.removePriceLine(item.priceLine); // safe
-      // markers removal: use setMarkers([])
-      if (item.markerSeries) item.markerSeries.setMarkers([]);
-    }catch(e){}
-  });
-  indicatorLines = [];
-}
-
-/* build and draw indicators on chart */
-function drawIndicators(data){
-  clearIndicatorLines();
-  if (!data || !data.length) return;
-
-  // Reliable S/R (pivot horizontals)
-  if (toggleReliable.checked){
-    const left = parseInt(pivotLeftInput.value) || 15;
-    const right = parseInt(pivotRightInput.value) || 15;
-    const piv = detectPivots(data, left, right);
-    // pick top N pivots and draw unique horizontal lines
-    const combined = [...piv.highs.map(h=>({v:h.value,t:h.time,typ:'r'})), ...piv.lows.map(l=>({v:l.value,t:l.time,typ:'s'}))];
-    combined.sort((a,b)=>Math.abs(b.t - data[data.length-1].time) - Math.abs(a.t - data[data.length-1].time));
-    const uniq = [];
-    combined.forEach(c => {
-      if (!uniq.some(u => Math.abs(u.v - c.v) < (Math.abs(c.v)*0.002 + 0.0001))) uniq.push(c);
-    });
-    // only draw first 10
-    uniq.slice(0,12).forEach((u, idx) => {
-      const pl = candleSeries.createPriceLine({
-        price: u.v,
-        color: u.typ === 'r' ? '#ff6b6b' : '#14b8a6',
-        lineWidth: u.typ === 'r' ? 2 : 1,
-        lineStyle: 1,
-        axisLabelVisible: true,
-        title: (u.typ==='r'?'R':'S') + (idx+1)
-      });
-      indicatorLines.push({ priceLine: pl, meta: u });
-    });
-  }
-
-  // Lux-style S/R (SMA + upper/lower)
-  if (toggleLux.checked){
-    const len = Math.max(5, parseInt(luxLen1.value) || 50);
-    const mlt = parseFloat(luxMlt1.value) || 2;
-    const lux = computeLuxSR(data, len, mlt);
-    // pick last valid entry
-    for (let i = lux.length-1; i>=0; i--){
-      if (lux[i]) {
-        const last = lux[i];
-        // draw lines
-        const midLine = candleSeries.createPriceLine({ price: last.mid, color:'#2b82ff', lineWidth:1, lineStyle:2, title:'Lux mid' });
-        const upLine = candleSeries.createPriceLine({ price: last.upper, color:'#6ef0a8', lineWidth:1, lineStyle:2, title:'Lux up' });
-        const lowLine = candleSeries.createPriceLine({ price: last.lower, color:'#f09ea8', lineWidth:1, lineStyle:2, title:'Lux low' });
-        indicatorLines.push({ priceLine: midLine, meta: {type:'lux'} });
-        indicatorLines.push({ priceLine: upLine, meta: {type:'lux'} });
-        indicatorLines.push({ priceLine: lowLine, meta: {type:'lux'} });
-        break;
-      }
-    }
-  }
-
-  // Island Reversal boxes (simple)
-  if (toggleIsland.checked){
-    const gapMult = parseFloat(islandGapMult.value) || 1.5;
-    const islands = detectIslandReversals(data, gapMult);
-    // We'll draw vertical lines as markers (LightweightCharts lacks rectangle boxes API)
-    // Use a tiny helper series for markers
-    const markers = [];
-    islands.forEach((isl, idx) => {
-      markers.push({ time: toChartTime(isl.startTime), position: 'belowBar', color: '#000', shape: 'circle', text: 'IR' });
-      // draw price-lines for top & bottom
-      const topL = candleSeries.createPriceLine({ price: isl.top, color:'#ffd966', lineWidth:1, lineStyle:1, title:'IR top' });
-      const botL = candleSeries.createPriceLine({ price: isl.bottom, color:'#ffd966', lineWidth:1, lineStyle:1, title:'IR bottom' });
-      indicatorLines.push({ priceLine: topL, meta:{type:'island'}});
-      indicatorLines.push({ priceLine: botL, meta:{type:'island'}});
-    });
-    // set markers (single set)
-    candleSeries.setMarkers(markers);
-    indicatorLines.push({ markerSeries: candleSeries, meta:{type:'islands_markers'} });
-  }
-}
-
-/* ---------------------------
-   Main: loadChart
-   --------------------------- */
-async function loadChart(symbol){
-  currentSymbol = symbol;
-  markActiveSymbol(symbol);
-  symbolTitle.innerText = symbol;
-  showSpinner(); hideError();
-  createChartIfNeeded();
-  // Clear existing data
-  try {
-    const data = await fetchOHLC(symbol, currentTf);
-    if (!data || !data.length) { showError('No data returned'); hideSpinner(); return; }
-    // set candle and volume data
-    const candleData = data.map(d => ({ time: toChartTime(d.time), open: d.open, high: d.high, low: d.low, close: d.close }));
-    const volumeData = data.map(d => ({ time: toChartTime(d.time), value: d.volume || 0, color: (d.close>=d.open)?'#22c55e':'#ef4444' }));
-    candleSeries.setData(candleData);
-    volumeSeries.setData(volumeData);
-    chart.timeScale().fitContent();
-    // draw indicators
-    drawIndicators(data);
-    // price line initial
-    const last = data[data.length-1];
-    if (last){
-      if (priceLine) candleSeries.removePriceLine(priceLine);
-      priceLine = candleSeries.createPriceLine({ price: last.close, color:'#38bdf8', lineWidth:1, axisLabelVisible:true, title:'Last' });
-      livePriceEl.innerText = Number(last.close).toFixed(2);
-    }
-    // start live poll
-    if (liveTimer) clearInterval(liveTimer);
-    liveTimer = setInterval(()=>pollLivePrice(symbol), LIVE_POLL_MS);
-  } catch (e){
-    console.error(e);
-    showError('Failed to load chart: '+ (e.message || e));
-  } finally {
-    hideSpinner();
-  }
-}
-
-/* ---------------------------
-   Presets: save/load/export/import
-   --------------------------- */
-function getCurrentPreset(){
-  return {
-    name: presetNameInput.value || ('preset_' + Date.now()),
-    reliable: { enabled: toggleReliable.checked, pivotLeft: parseInt(pivotLeftInput.value)||15, pivotRight: parseInt(pivotRightInput.value)||15 },
-    lux: { enabled: toggleLux.checked, len1: parseInt(luxLen1.value)||50, mlt1: parseFloat(luxMlt1.value)||2 },
-    island: { enabled: toggleIsland.checked, gapMult: parseFloat(islandGapMult.value)||1.5 },
-    // you can add more items to save indicator state
-  };
-}
-
-function savePreset(){
-  const p = getCurrentPreset();
-  const stored = JSON.parse(localStorage.getItem('tc_presets')||'[]');
-  stored.push(p);
-  localStorage.setItem('tc_presets', JSON.stringify(stored));
-  renderPresetList();
-  presetNameInput.value = '';
-}
-
-function renderPresetList(){
-  presetListEl.innerHTML = '';
-  const stored = JSON.parse(localStorage.getItem('tc_presets')||'[]');
-  stored.forEach((p, idx) => {
+/* presets */
+function renderPresets(){
+  presetList.innerHTML = 'Saved presets:';
+  const keys = Object.keys(presets);
+  if(!keys.length) { presetList.innerHTML += '<div style="color:var(--muted);margin-top:6px">no saved presets</div>'; return; }
+  for(const k of keys){
     const div = document.createElement('div');
-    div.className='preset-item';
-    div.innerHTML = `<div>${p.name}</div><div style="display:flex;gap:6px">
-      <button class="btn secondary load-btn" data-idx="${idx}">Load</button>
-      <button class="btn secondary del-btn" data-idx="${idx}">Delete</button>
-    </div>`;
-    presetListEl.appendChild(div);
+    div.style.marginTop='6px';
+    div.innerHTML = `<strong style="margin-right:8px">${k}</strong>
+      <button data-name="${k}" class="loadPreset" style="margin-right:6px">Load</button>
+      <button data-name="${k}" class="delPreset" style="background:transparent;color:var(--muted)">Delete</button>`;
+    presetList.appendChild(div);
+  }
+  Array.from(document.getElementsByClassName('loadPreset')).forEach(b=>{
+    b.addEventListener('click', ()=> {
+      const name = b.dataset.name; applyPreset(presets[name]);
+    });
   });
-  document.querySelectorAll('.load-btn').forEach(b=>b.addEventListener('click', (ev)=>{
-    const idx = parseInt(ev.currentTarget.dataset.idx);
-    const stored = JSON.parse(localStorage.getItem('tc_presets')||'[]');
-    const p = stored[idx];
-    if (!p) return;
-    // apply preset
-    toggleReliable.checked = !!p.reliable.enabled;
-    pivotLeftInput.value = p.reliable.pivotLeft;
-    pivotRightInput.value = p.reliable.pivotRight;
-    toggleLux.checked = !!p.lux.enabled;
-    luxLen1.value = p.lux.len1;
-    luxMlt1.value = p.lux.mlt1;
-    toggleIsland.checked = !!p.island.enabled;
-    islandGapMult.value = p.island.gapMult;
-    // redraw
-    if (currentSymbol) loadChart(currentSymbol);
-  }));
-  document.querySelectorAll('.del-btn').forEach(b=>b.addEventListener('click', (ev)=>{
-    const idx = parseInt(ev.currentTarget.dataset.idx);
-    const stored = JSON.parse(localStorage.getItem('tc_presets')||'[]');
-    stored.splice(idx,1);
-    localStorage.setItem('tc_presets', JSON.stringify(stored));
-    renderPresetList();
-  }));
+  Array.from(document.getElementsByClassName('delPreset')).forEach(b=>{
+    b.addEventListener('click', ()=> {
+      const name = b.dataset.name; delete presets[name]; localStorage.setItem('chartPresets', JSON.stringify(presets)); renderPresets();
+    });
+  });
 }
-
-exportPresetBtn.addEventListener('click', ()=>{
-  const stored = JSON.parse(localStorage.getItem('tc_presets')||'[]');
-  const blob = new Blob([JSON.stringify(stored, null, 2)], {type:'application/json'});
+savePresetBtn.addEventListener('click', ()=>{
+  const name = (presetName.value||'').trim();
+  if(!name) { alert('Give preset a name'); return; }
+  const preset = {
+    pivotLeft: pivotLeft.valueAsNumber,
+    pivotRight: pivotRight.valueAsNumber,
+    luxLen1: luxLen1.valueAsNumber,
+    luxMlt1: luxMlt1.valueAsNumber,
+    islandTrend: islandTrend.valueAsNumber,
+    islandVolFilter: islandVolFilter.checked,
+    toggles: { reliable: toggleReliable.checked, lux: toggleLux.checked, island: toggleIsland.checked }
+  };
+  presets[name] = preset;
+  localStorage.setItem('chartPresets', JSON.stringify(presets));
+  renderPresets();
+  presetName.value = '';
+});
+exportPresetsBtn.addEventListener('click', ()=> {
+  const blob = new Blob([JSON.stringify(presets, null, 2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = 'tc_presets.json'; a.click();
+  const a = document.createElement('a'); a.href=url; a.download='presets.json'; a.click();
   URL.revokeObjectURL(url);
 });
-
-savePresetBtn.addEventListener('click', savePreset);
-
-/* import via file drop? simple prompt */
-exportPresetBtn.addEventListener('contextmenu', (e)=>{
-  e.preventDefault();
-  const json = prompt('Paste preset JSON here to import:');
-  if (!json) return;
-  try{
-    const parsed = JSON.parse(json);
-    localStorage.setItem('tc_presets', JSON.stringify(parsed));
-    renderPresetList();
-    alert('Imported presets');
-  }catch(err){ alert('Invalid JSON'); }
-});
-
-/* ---------------------------
-   init app
-   --------------------------- */
-function init(){
-  renderWatchlist();
-  renderPresetList();
-  // attach search filter
-  document.getElementById('search').addEventListener('input', (e)=>{
-    const q = e.target.value.trim().toLowerCase();
-    document.querySelectorAll('#watchlist li').forEach(li=>{
-      li.style.display = (!q || li.innerText.toLowerCase().includes(q)) ? '' : 'none';
-    });
-  });
-  // setup initial chart
-  const initial = currentSymbol || (watchlist.length?watchlist[0]:null);
-  if (initial) loadChart(initial);
-
-  // when indicator controls change -> redraw on current data
-  [toggleReliable, pivotLeftInput, pivotRightInput, toggleLux, luxLen1, luxMlt1, toggleIsland, islandGapMult].forEach(el=>{
-    el.addEventListener('change', ()=>{ if (currentSymbol) loadChart(currentSymbol); });
-  });
-
-  // also allow pressing Enter to add symbol
-  addSymbolInput.addEventListener('keydown', (e)=>{ if (e.key==='Enter') addBtn.click(); });
-
-  // initial mark active
-  markActiveSymbol(initial);
+function applyPreset(p){
+  pivotLeft.value = p.pivotLeft; pivotRight.value = p.pivotRight;
+  luxLen1.value = p.luxLen1; luxMlt1.value = p.luxMlt1;
+  islandTrend.value = p.islandTrend; islandVolFilter.checked = p.islandVolFilter;
+  toggleReliable.checked = !!p.toggles.reliable;
+  toggleLux.checked = !!p.toggles.lux;
+  toggleIsland.checked = !!p.toggles.island;
+  document.getElementById('applyIndicators').click();
 }
 
-init();
+/* initial render */
+renderWatchlist();
+renderPresets();
 
-/* ---------------------------
-   Clean up on unload
-   --------------------------- */
-window.addEventListener('beforeunload', ()=>{ if (liveTimer) clearInterval(liveTimer); });
+/* ---------------- FETCH / DATA ----------------
+   fetchOHLC: tries worker endpoint; expects array of ohlc objects with epoch seconds: {time,open,high,low,close,volume}
+   If response contains nested structure (like yahoo), this function attempts to normalize it.
+*/
+async function fetchOHLC(symbol, range='1y', granularity='1d'){
+  const url = WORKER_URL + encodeURIComponent(symbol) + `&range=${range}&granularity=${granularity}`;
+  try{
+    const res = await fetch(url, {cache:'no-store'});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const json = await res.json();
+
+    // If worker returns simple array
+    if(Array.isArray(json)) return json.map(normalizeBar);
+
+    // If worker returns Yahoo-like object result (attempt to parse)
+    if(json && json.chart && json.chart.result && json.chart.result[0]){
+      const r = json.chart.result[0];
+      const timestamps = r.timestamp || r.indicators?.quote?.[0]?.timestamp || r.timestamp;
+      const quote = r.indicators?.quote?.[0];
+      if(Array.isArray(timestamps) && quote){
+        const out = [];
+        for(let i=0;i<timestamps.length;i++){
+          const t = timestamps[i]; // may be in seconds
+          const o = quote.open?.[i] ?? quote.open?.[i];
+          const h = quote.high?.[i];
+          const l = quote.low?.[i];
+          const c = quote.close?.[i];
+          const v = quote.volume?.[i] ?? 0;
+          if(o==null||h==null||l==null||c==null) continue;
+          out.push({time: t, open:o, high:h, low:l, close:c, volume:v});
+        }
+        return out.map(normalizeBar);
+      }
+    }
+
+    // If worker returned wrapper {data: [...]}
+    if(json && json.data && Array.isArray(json.data)) return json.data.map(normalizeBar);
+
+    // otherwise, try to map if it's already keyed
+    if(Array.isArray(json.dataPoints)) return json.dataPoints.map(normalizeBar);
+
+    console.warn('Unrecognized response format from data worker', json);
+    return [];
+  }catch(err){
+    console.error('fetchOHLC error', err);
+    return [];
+  }
+}
+
+function normalizeBar(b){
+  // Accept either epoch seconds or milliseconds
+  let t = b.time || b[0] || b.timestamp || b.date || null;
+  if(t==null) return null;
+  // if timestamp looks like ms (>= 1e12) convert to seconds
+  if(t > 1e12) t = Math.floor(t/1000);
+  // reduce to whole seconds
+  t = Math.floor(t);
+  return { time: t, open:+b.open, high:+b.high, low:+b.low, close:+b.close, volume:+(b.volume||0) };
+}
+
+/* ------------- TIMEFRAME CONVERSION -------------
+  convertToTF: convert source candles (sourceGranularity in seconds) into requested TF
+  For daily source -> produce intraday synthetic (interpolated) for 1m/5m/15m etc (approx)
+*/
+const tfSeconds = {
+  '1m':60, '5m':300, '15m':900, '30m':1800, '60m':3600,
+  '1D':86400, '1W':86400*7, '1M':86400*30
+};
+
+function convertToTF(sourceBars, sourceSec, targetTF){
+  // sourceBars: array sorted chronologically ascending
+  const targetSec = tfSeconds[targetTF] || 86400;
+  if(sourceSec === targetSec) return sourceBars.slice();
+
+  // If target is higher (e.g., from 1D -> 1W/1M): aggregate
+  if(targetSec >= sourceSec){
+    // group by floor(time/targetSec)
+    const groups = new Map();
+    for(const b of sourceBars){
+      const key = Math.floor(b.time / targetSec);
+      if(!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(b);
+    }
+    const out = [];
+    for(const [k, arr] of groups){
+      const o = arr[0].open;
+      const h = Math.max(...arr.map(x=>x.high));
+      const l = Math.min(...arr.map(x=>x.low));
+      const c = arr[arr.length-1].close;
+      const v = arr.reduce((s,x)=>s+x.volume,0);
+      out.push({time: k * targetSec, open:o, high:h, low:l, close:c, volume:v});
+    }
+    return out;
+  }
+
+  // If target is lower (making intraday from daily), we synthesize by splitting each day into smaller bars
+  // This is approximate: replicate bar close movements across the intraday bars.
+  const out = [];
+  for(const day of sourceBars){
+    const parts = Math.floor(86400 / targetSec);
+    if(parts < 1) parts = 1;
+    // linear interpolation between open -> close for intraday bodies, use high/low spikes on the nearest part
+    for(let p=0;p<parts;p++){
+      const t = day.time + p * targetSec;
+      // simple interpolation
+      const alpha = (p + 0.5) / parts;
+      const open = day.open;
+      const close = day.close;
+      const o = open + (close - open) * (p / parts);
+      const c = open + (close - open) * ((p + 1) / parts);
+      // intraday highs/lows are bounded by day high/low
+      const h = Math.max(o, c, day.high * (0.98 + 0.02*Math.random()));
+      const l = Math.min(o, c, day.low * (1 - 0.02*Math.random()));
+      const v = Math.round(day.volume / parts);
+      out.push({time: t, open:o, high:h, low:l, close:c, volume:v});
+    }
+  }
+  return out;
+}
+
+/* ----------- Indicator engines (simplified & robust) ----------
+   Each indicator takes chronological ascending array of bars (time increasing).
+   They return arrays of horizontal levels {price, label, color, width}
+*/
+
+/* Reliable S/R: pivot-based horizontal lines */
+function computeReliableSR(bars, left=15, right=15){
+  const levels = [];
+  // Use classic pivot high/low detection
+  for(let i=left; i<bars.length-right; i++){
+    const isPH = bars.slice(i-right, i+right+1).every((b, idx, arr) => {
+      if(idx===right) return true;
+      return bars[i].high > arr[idx].high;
+    });
+    const isPL = bars.slice(i-right, i+right+1).every((b, idx, arr) => {
+      if(idx===right) return true;
+      return bars[i].low < arr[idx].low;
+    });
+    if(isPH) levels.push({price: bars[i].high, label:'PH', color:'#ef4444', width:2});
+    if(isPL) levels.push({price: bars[i].low, label:'PL', color:'#22c55e', width:2});
+  }
+
+  // Deduplicate by price proximity (merge near levels)
+  const merged = [];
+  const tol = 1e-6;
+  levels.sort((a,b)=>b.price-a.price);
+  for(const L of levels){
+    const found = merged.find(m=>Math.abs(m.price - L.price) < (L.price*0.0015 + tol));
+    if(found){
+      found.count=(found.count||1)+1;
+      found.price = (found.price + L.price)/2;
+    } else merged.push({...L,count:1});
+  }
+  // rank by count (how many pivot confirmations)
+  merged.sort((a,b)=>b.count - a.count);
+  return merged.slice(0, 50);
+}
+
+/* LuxAlgo-like S/R simplified (SMA + multiples and fibonacci-like layers)
+   We implement only the essentials: multiple series of moving averages + bands
+*/
+function computeLuxSR(bars, len=50, mlt=2){
+  // compute sma
+  const closes = bars.map(b=>b.close);
+  const sma = [];
+  let sum=0;
+  for(let i=0;i<closes.length;i++){
+    sum += closes[i];
+    if(i>=len) sum -= closes[i-len];
+    if(i>=len-1) sma.push({time:bars[i].time, value: sum/len});
+    else sma.push({time:bars[i].time, value: null});
+  }
+  // compute BBands upper/lower
+  const levels = [];
+  for(let i=len-1;i<sma.length;i++){
+    const win = closes.slice(i-len+1, i+1);
+    const mean = sma[i].value;
+    const variance = win.reduce((s,x)=>s+Math.pow(x-mean,2),0)/len;
+    const std = Math.sqrt(variance);
+    const upper = mean + mlt*std;
+    const lower = mean - mlt*std;
+    levels.push({time:bars[i].time, sma:mean, upper, lower});
+  }
+  // Produce horizontal levels at the last visible sma/upper/lower
+  const last = levels[levels.length-1];
+  if(!last) return [];
+  return [
+    {price:last.upper, label:'Lux Upper', color:'#ffd166', width:1},
+    {price:last.sma, label:'Lux SMA', color:'#60a5fa', width:2},
+    {price:last.lower, label:'Lux Lower', color:'#7c3aed', width:1}
+  ];
+}
+
+/* Island Reversal simplified detection: find bullish/bearish gap islands and return box ranges */
+function computeIslandReversals(bars, trendLen=10, volFilter=true){
+  const reversals = [];
+  // naive detection: check for gap up/down between consecutive bars:
+  for(let i=1;i<bars.length-1;i++){
+    const prev = bars[i-1];
+    const cur = bars[i];
+    const next = bars[i+1];
+    // bullish island: gap up (cur.low > prev.high) then gap down (next.high < cur.low) - small window
+    if(cur.low > prev.high && next.high < cur.low){
+      // compute aggregated top/bottom within island region (prev,end)
+      // verify volume filter: island volume > avg(prev N)
+      let volAvg = 0;
+      for(let j=Math.max(0,i-trendLen); j<i; j++) volAvg += bars[j].volume;
+      volAvg = volAvg / Math.min(trendLen, i);
+      const islandVol = cur.volume;
+      if(volFilter && islandVol < volAvg) continue;
+      reversals.push({startTime:cur.time, endTime:next.time, top:cur.high, bottom:cur.low, bullish:true});
+    }
+    // bearish island: gap down then gap up
+    if(cur.high < prev.low && next.low > cur.high){
+      let volAvg = 0;
+      for(let j=Math.max(0,i-trendLen); j<i; j++) volAvg += bars[j].volume;
+      volAvg = volAvg / Math.min(trendLen, i);
+      const islandVol = cur.volume;
+      if(volFilter && islandVol < volAvg) continue;
+      reversals.push({startTime:cur.time, endTime:next.time, top:cur.high, bottom:cur.low, bullish:false});
+    }
+  }
+  return reversals;
+}
+
+/* Draw indicators on chart: horizontal lines + boxes for island */
+function clearIndicators(){
+  // remove line objects created via series price lines (we use price lines using priceAxis)
+  if(srLines.length) {
+    for(const obj of srLines) {
+      try{ chart.removePriceLine(obj); }catch(e){}
+    }
+  }
+  srLines=[];
+  // remove any custom drawing: we'll use chart.addLineSeries for each (but simpler: price lines)
+}
+
+/* Draw S/R from computed arrays */
+function drawIndicators(levels, opts={}) {
+  // levels: array of {price,label,color,width}
+  for(const L of levels){
+    try{
+      const pl = candleSeries.createPriceLine({
+        price: L.price,
+        color: L.color || '#999',
+        lineWidth: L.width || 1,
+        lineStyle: LightweightCharts.LineStyle.Solid,
+        axisLabelVisible: true,
+        title: L.label || ''
+      });
+      srLines.push(pl);
+    }catch(e){ console.warn('createPriceLine failed', e); }
+  }
+}
+
+/* Draw island reversals as boxes using lightweight-charts combined series */
+function drawIslands(islands){
+  // We'll draw using area series overlay: create a temporary histogram to show background
+  // lightweight-charts does not have rectangle drawing via API; we'll indicate islands with price lines top/bottom and small price lines
+  for(const it of islands){
+    const color = it.bullish ? 'rgba(8,153,129,0.12)' : 'rgba(242,54,69,0.12)';
+    const topLine = candleSeries.createPriceLine({price:it.top, color:color, lineWidth:2, title:it.bullish ? 'Island Top' : 'Island Top'});
+    const botLine = candleSeries.createPriceLine({price:it.bottom, color:color, lineWidth:2, title:it.bullish ? 'Island Bottom' : 'Island Bottom'});
+    srLines.push(topLine, botLine);
+  }
+}
+
+/* ------------------- Main loader ------------------ */
+async function loadChart(symbol){
+  if(!symbol) return;
+  lastSymbol = symbol;
+  attachActiveToList(symbol);
+  createChart();
+  showSpinner();
+  hideError();
+  symbolTitle.innerText = symbol;
+
+  // source fetch (we ask worker for daily by default)
+  const srcBars = await fetchOHLC(symbol, '1y', '1d');
+  hideSpinner();
+  if(!srcBars || srcBars.length===0){
+    showError('No data returned for ' + symbol);
+    return;
+  }
+
+  // ensure ascending chronological order
+  srcBars.sort((a,b)=>a.time - b.time);
+
+  /* Convert source (assume daily seconds) to requested timeframe */
+  // detect source interval: if timestamps consecutive diff > 4000 -> daily; try to compute period
+  let srcSec = 86400;
+  if(srcBars.length >= 2) srcSec = Math.max(60, Math.round((srcBars[1].time - srcBars[0].time)));
+  // Convert
+  const bars = convertToTF(srcBars, srcSec, activeTF);
+
+  // Format for Lightweight charts: requires time either as string 'YYYY-MM-DD' or epoch (seconds)
+  // We will use epoch seconds.
+  const lcData = bars.map(b=>({
+    time: b.time,
+    open: Number(b.open),
+    high: Number(b.high),
+    low: Number(b.low),
+    close: Number(b.close)
+  }));
+
+  try{
+    candleSeries.setData(lcData);
+    chart.timeScale().fitContent();
+  }catch(err){
+    console.error('chart setData error', err);
+    showError('Chart rendering error - data may be malformed.');
+    return;
+  }
+
+  // volume set
+  if(showVolume.checked){
+    const vData = bars.map(b=>({time:b.time, value: b.volume, color: b.close >= b.open ? '#22c55e' : '#ef4444'}));
+    try{ volumeSeries.setData(vData); }catch(e){}
+  } else {
+    try{ volumeSeries.setData([]); }catch(e){}
+  }
+
+  // indicators (apply if toggled)
+  clearIndicators();
+  if(toggleReliable.checked){
+    const levels = computeReliableSR(bars, pivotLeft.valueAsNumber || 15, pivotRight.valueAsNumber || 15);
+    drawIndicators(levels.map(l=>({price:l.price, label:l.label, color:l.color, width:l.width})));
+  }
+  if(toggleLux.checked){
+    const lux = computeLuxSR(bars, luxLen1.valueAsNumber || 50, luxMlt1.valueAsNumber || 2);
+    drawIndicators(lux);
+  }
+  if(toggleIsland.checked){
+    const islands = computeIslandReversals(bars, islandTrend.valueAsNumber || 10, islandVolFilter.checked);
+    drawIslands(islands);
+  }
+
+  // Start live polling for last price if within trading hours
+  setupLivePolling(symbol, srcBars);
+}
+
+/* ----------------- Live Polling -----------------
+  Polls the worker for the latest tick/quote every N seconds and updates the last candle.
+*/
+function isTradingNow(){
+  // Simple check: if local time between 9:00 and 15:30 IST -> trading hours for NSE
+  const d = new Date();
+  // convert to IST offset +5:30; here user's local may be IST already — we'll assume browser time is local; user in India
+  const hours = d.getHours();
+  const mins = d.getMinutes();
+  // basic window 9:00 - 15:30
+  return (hours > 9 && hours < 16) || (hours === 9 && mins >= 0) || (hours === 15 && mins <= 30);
+}
+
+async function fetchLatestQuote(symbol){
+  // we attempt to fetch OHLC for last 2 days and extract latest bar
+  const out = await fetchOHLC(symbol,'5d','1d');
+  if(!out || out.length===0) return null;
+  const last = out[out.length-1];
+  return last;
+}
+
+function setupLivePolling(symbol, srcBars){
+  const interval = Math.max(2, (document.getElementById('pollInterval').valueAsNumber || 5));
+  if(pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  pollTimer = setInterval(async ()=>{
+    try{
+      if(!isTradingNow()){
+        // after market close – stop updating live; but still allow manual refresh
+        return;
+      }
+      const latest = await fetchLatestQuote(symbol);
+      if(!latest) return;
+      // append or update last candle: convert to activeTF
+      const srcSec = 86400;
+      const bars = convertToTF([latest], srcSec, activeTF);
+      if(bars.length===0) return;
+      const b = bars[0];
+      // update last point in chart by calling setData with previous + new last one
+      const visible = candleSeries.searchPriceLine ? [] : []; // no read of current data: simply append by calling setData expecting whole array
+      // easier: fetch full set again (safe for stability)
+      loadChart(symbol);
+    }catch(err){
+      console.warn('poll error',err);
+    }
+  }, interval*1000);
+}
+
+/* apply indicator button */
+applyIndicatorsBtn.addEventListener('click', ()=>{
+  if(lastSymbol) loadChart(lastSymbol);
+});
+
+/* initial default load */
+if(watchSymbols.length>0) loadChart(watchSymbols[0]);
+
+/* onload attach watchlist render and presets */
+renderWatchlist();
+renderPresets();
+
+/* ensure cleanup on tab close */
+window.addEventListener('beforeunload', ()=> {
+  if(pollTimer) clearInterval(pollTimer);
+});
 
 </script>
 </body>
