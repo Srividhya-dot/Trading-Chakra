@@ -1,75 +1,57 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Trading Chakra</title>
 
   <link rel="stylesheet" href="style.css" />
 
-  <!-- Lightweight Charts -->
+  <!-- Lightweight Charts (stable) -->
   <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.1/dist/lightweight-charts.standalone.production.js"></script>
-
 </head>
 <body>
-
-<div id="app">
-
-  <!-- SIDEBAR -->
-  <aside class="sidebar">
+  <div id="app">
+    <aside class="sidebar">
       <h1>Watchlist</h1>
 
-      <input id="search" type="text" placeholder="Search stock...">
+      <input id="search" type="text" placeholder="Search stock..." />
 
-      <ul id="watchlist">
-          <li data-symbol="RELIANCE.NS">RELIANCE</li>
-          <li data-symbol="TCS.NS">TCS</li>
-          <li data-symbol="INFY.NS">INFY</li>
-          <li data-symbol="HDFCBANK.NS">HDFCBANK</li>
-          <li data-symbol="ICICIBANK.NS">ICICIBANK</li>
-      </ul>
+      <ul id="watchlist"></ul>
 
-      <!-- ADD STOCK -->
       <div id="add-box">
-          <input id="add-stock" type="text" placeholder="Add symbol...">
-          <button id="add-btn">Add</button>
+        <input id="add-stock" type="text" placeholder="Add symbol..." />
+        <button id="add-btn">Add</button>
       </div>
-  </aside>
 
-  <!-- MAIN PANEL -->
-  <main class="chart-area">
+    </aside>
 
-      <!-- TOP BAR -->
+    <main class="chart-area">
       <div id="toolbar">
-          <span id="symbol-title">Loading...</span>
+        <span id="symbol-title">Loading...</span>
 
-          <div id="timeframes">
-              <button class="tf-btn active" data-tf="1D">1D</button>
-              <button class="tf-btn" data-tf="1W">1W</button>
-              <button class="tf-btn" data-tf="1M">1M</button>
-              <button class="tf-btn" data-tf="6M">6M</button>
-              <button class="tf-btn" data-tf="1Y">1Y</button>
-              <button class="tf-btn" data-tf="5Y">5Y</button>
-              <button class="tf-btn" data-tf="MAX">MAX</button>
-          </div>
+        <div id="timeframes" class="tf-group">
+          <button class="tf-btn active" data-tf="1m">1m</button>
+          <button class="tf-btn" data-tf="5m">5m</button>
+          <button class="tf-btn" data-tf="15m">15m</button>
+          <button class="tf-btn" data-tf="30m">30m</button>
+          <button class="tf-btn" data-tf="60m">60m</button>
+          <button class="tf-btn" data-tf="1d">1D</button>
+          <button class="tf-btn" data-tf="1w">1W</button>
+          <button class="tf-btn" data-tf="1mo">1M</button>
+        </div>
       </div>
 
       <div id="chart-wrapper">
+        <div id="chart"></div>
+        <div id="volume"></div>
 
-          <div id="chart"></div>
-          <div id="volume"></div>
-
-          <div id="spinner">Loading...</div>
-          <div id="error"></div>
-
+        <div id="spinner">Loading...</div>
+        <div id="error" role="alert"></div>
       </div>
+    </main>
+  </div>
 
-  </main>
-
-</div>
-
-<!-- YOUR JAVASCRIPT MUST BE HERE (BOTTOM OF BODY) -->
-<script src="script.js"></script>
-
+  <script src="script.js"></script>
 </body>
 </html>
