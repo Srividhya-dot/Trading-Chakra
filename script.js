@@ -24,7 +24,7 @@ function loadChart(symbol) {
 }
 
 // Load default chart when site opens
-loadChart("RELIANCE.NS");
+loadChart("NSE:RELIANCE");
 
 // When you click any stock in the watchlist → update chart
 document.querySelectorAll("#watchlist li").forEach(item => {
