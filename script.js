@@ -1,86 +1,128 @@
-// Your Cloudflare Worker URL
-const backendURL = "https://black-tree-2e32.sriviadithi.workers.dev/?symbol=";
+// ==============================
+// CONFIG
+// ==============================
+const WORKER_URL = "https://black-tree-2e32.sriviadithi.workers.dev/?symbol=";
 
-let chart = null;
-let candleSeries = null;
+// ==============================
+// CHART SETUP
+// ==============================
+let chart;
+let candleSeries;
 
-// Fetch data from Worker
+function initChart() {
+    const chartContainer = document.getElementById("chart-container");
+
+    chart = LightweightCharts.createChart(chartContainer, {
+        width: chartContainer.clientWidth,
+        height: chartContainer.clientHeight,
+        layout: {
+            background: { color: "#0d1b2a" },
+            textColor: "#ffffff",
+        },
+        grid: {
+            vertLines: { color: "#1b263b" },
+            horzLines: { color: "#1b263b" },
+        },
+        timeScale: {
+            borderColor: "#1b263b",
+        },
+    });
+
+    candleSeries = chart.addCandlestickSeries();
+}
+
+// ==============================
+// FETCH OHLC DATA FROM WORKER
+// ==============================
 async function fetchData(symbol) {
+    const url = WORKER_URL + symbol;
+
     try {
-        const response = await fetch(backendURL + symbol);
+        const response = await fetch(url, {
+            method: "GET",
+            headers: { "Content-Type": "application/json" }
+        });
+
+        if (!response.ok) {
+            console.error("Fetch failed:", response.status);
+            return null;
+        }
+
         const data = await response.json();
 
         if (!Array.isArray(data)) {
-            console.error("Backend returned non-array:", data);
-            return [];
+            console.error("Invalid data format:", data);
+            return null;
         }
 
-        return data.map(c => ({
-            time: c.time,             // UNIX timestamp (seconds)
-            open: c.open,
-            high: c.high,
-            low: c.low,
-            close: c.close
-        }));
+        return data;
 
     } catch (err) {
         console.error("Fetch error:", err);
-        return [];
+        return null;
     }
 }
 
-function createChartIfNeeded() {
-    if (chart) return;
-
-    const container = document.getElementById("chart-container");
-
-    chart = LightweightCharts.createChart(container, {
-        width: container.clientWidth,
-        height: container.clientHeight,
-        layout: {
-            background: { color: "#0f172a" },
-            textColor: "#ffffff"
-        },
-        grid: {
-            vertLines: { color: "#1e293b" },
-            horzLines: { color: "#1e293b" },
-        }
-    });
-
-    candleSeries = chart.addCandlestickSeries({
-        upColor: "#4ade80",
-        downColor: "#f87171",
-        borderUpColor: "#4ade80",
-        borderDownColor: "#f87171",
-        wickUpColor: "#4ade80",
-        wickDownColor: "#f87171"
-    });
-}
-
+// ==============================
+// LOAD CHART
+// ==============================
 async function loadChart(symbol) {
-    createChartIfNeeded();
+    console.log("Loading:", symbol);
 
     const data = await fetchData(symbol);
 
-    if (data.length === 0) {
-        console.warn("No chart data returned");
+    if (!data || data.length === 0) {
+        console.warn("⚠ No chart data returned");
         return;
     }
 
-    candleSeries.setData(data);
+    // Convert to Lightweight Charts format
+    const formatted = data.map(c => ({
+        time: Math.floor(c.time), // seconds timestamp
+        open: c.open,
+        high: c.high,
+        low: c.low,
+        close: c.close
+    }));
+
+    candleSeries.setData(formatted);
 }
 
-function setupWatchlist() {
-    document.getElementById("watchlist").addEventListener("click", e => {
-        if (e.target.dataset.symbol) {
-            loadChart(e.target.dataset.symbol);
-        }
+// ==============================
+// WATCHLIST CLICK EVENTS
+// ==============================
+function initWatchlist() {
+    const items = document.querySelectorAll("#watchlist li");
+
+    items.forEach(item => {
+        item.addEventListener("click", () => {
+            const sym = item.dataset.symbol;
+            loadChart(sym);
+        });
     });
 }
 
+// ==============================
+// RESIZE HANDLER
+// ==============================
+window.addEventListener("resize", () => {
+    if (chart) {
+        chart.applyOptions({
+            width: chartContainer.clientWidth,
+            height: chartContainer.clientHeight
+        });
+    }
+});
+
+// ==============================
+// INITIALIZE APP
+// ==============================
 function init() {
-    setupWatchlist();
-    loadChart("RELIANCE.NS"); // Default
+    initChart();
+    initWatchlist();
+
+    // Load default chart
+    loadChart("RELIANCE.NS");
 }
 
 init();
