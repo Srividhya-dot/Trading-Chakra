@@ -3,28 +3,24 @@ html, body {
   padding: 0;
   height: 100%;
   overflow: hidden;
-}
-
-body {
   font-family: Arial, sans-serif;
-  background: #0f172a;
-  color: white;
 }
 
-/* 2-column layout */
+/* Main layout: sidebar + chart */
 #app {
   display: grid;
   grid-template-columns: 250px auto;
   height: 100vh;
 }
 
-/* Sidebar styling */
+/* Sidebar */
 .sidebar {
-  background: #1e293b;
+  background: #0f172a;
   padding: 1rem;
-  border-right: 1px solid #334155;
   height: 100vh;
+  color: white;
   box-sizing: border-box;
+  border-right: 1px solid #1e293b;
 }
 
 .sidebar h2 {
@@ -34,34 +30,41 @@ body {
 
 #search {
   width: 100%;
-  padding: 6px;
-  margin-bottom: 10px;
-  border-radius: 4px;
+  padding: 8px;
+  border-radius: 6px;
+  margin-bottom: 12px;
   border: none;
+  outline: none;
 }
 
 #watchlist {
   list-style: none;
   padding: 0;
+  margin: 0;
 }
 
 #watchlist li {
-  padding: 8px;
-  background: #334155;
-  border-radius: 4px;
+  padding: 10px;
+  background: #1e293b;
+  color: white;
+  margin: 8px 0;
+  border-radius: 6px;
   cursor: pointer;
-  margin: 5px 0;
+  text-transform: uppercase;
+  text-align: left;
+  transition: background 0.3s;
 }
 
 #watchlist li:hover {
-  background: #475569;
+  background: #334155;
 }
 
-/* Chart area */
+/* Chart container */
 .chart-area {
-  height: 100vh;
   background: #0f172a;
   padding: 0;
+  margin: 0;
+  height: 100vh;
   display: flex;
 }
 
